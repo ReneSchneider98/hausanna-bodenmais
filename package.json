@@ -17,7 +17,7 @@
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "import:wordpress": "pnpm --filter @hausanna/api build && node apps/api/dist/scripts/import-wordpress.js",
+    "import:wordpress": "pnpm --filter @hausanna/shared build && pnpm --filter @hausanna/api build && node apps/api/dist/scripts/import-wordpress.js",
     "test:e2e": "pnpm --filter @hausanna/shared build && pnpm --filter @hausanna/api test:e2e"
   },
   "devDependencies": {

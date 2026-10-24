@@ -16,7 +16,12 @@ export const LEGACY_TO_HOME = new Set([
 /** WordPress-URLs enden auf "/": ohne Slash → 301 auf die Variante mit Slash. */
 export function enforceTrailingSlash(request: Request): void {
   const url = new URL(request.url);
-  if (url.pathname !== '/' && !url.pathname.endsWith('/')) {
-    throw redirect(`${url.pathname}/${url.search}`, 301);
+  // Client-Navigation lädt Daten über "/pfad/_.data" (Slash vorhanden) bzw. "/pfad.data" (ohne)
+  const pathname = url.pathname.endsWith('/_.data')
+    ? url.pathname.slice(0, -'_.data'.length)
+    : url.pathname.replace(/\.data$/, '');
+  if (pathname !== '/' && !pathname.endsWith('/')) {
+    url.searchParams.delete('_routes');
+    throw redirect(`${pathname}/${url.search}`, 301);
   }
 }
