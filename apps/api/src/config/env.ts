@@ -1,4 +1,13 @@
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+/** Lädt apps/api/.env (nur lokal; in Produktion setzt systemd die Variablen). */
+export function loadDotEnv(): void {
+  const file = resolve(dirname(fileURLToPath(import.meta.url)), '../../.env');
+  if (existsSync(file) && process.env.NODE_ENV !== 'test') process.loadEnvFile(file);
+}
 
 const bool = z
   .enum(['true', 'false', '1', '0', ''])

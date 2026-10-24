@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/http-exception.filter.js';
 import { DomainEventsModule } from './common/domain-events.js';
-import { ENV, loadEnv } from './config/env.js';
+import { ENV, loadDotEnv, loadEnv } from './config/env.js';
 import { DatabaseModule } from './infrastructure/database/database.module.js';
 import { MailModule } from './infrastructure/mail/mail.module.js';
 import { AccommodationsModule } from './modules/accommodations/accommodations.module.js';
@@ -16,7 +16,15 @@ import { HealthModule } from './modules/health/health.module.js';
 
 @Global()
 @Module({
-  providers: [{ provide: ENV, useFactory: () => loadEnv() }],
+  providers: [
+    {
+      provide: ENV,
+      useFactory: () => {
+        loadDotEnv();
+        return loadEnv();
+      },
+    },
+  ],
   exports: [ENV],
 })
 class ConfigModule {}

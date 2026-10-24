@@ -1,7 +1,7 @@
 {
   "name": "hausanna-bodenmais",
   "private": true,
-  "description": "Webseite + Admin-Panel für Haus Anna Bodenmais",
+  "description": "Webseite + Admin-Panel f\u00fcr Haus Anna Bodenmais",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {
@@ -16,7 +16,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "import:wordpress": "pnpm --filter @hausanna/api build && node apps/api/dist/scripts/import-wordpress.js",
+    "test:e2e": "pnpm --filter @hausanna/shared build && pnpm --filter @hausanna/api test:e2e"
   },
   "devDependencies": {
     "concurrently": "^10.0.6",

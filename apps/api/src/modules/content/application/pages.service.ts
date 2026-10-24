@@ -14,6 +14,10 @@ function sanitizeBlock(b: PageBlock): PageBlock {
       return { ...b, html: sanitizeRichText(b.html) };
     case 'richText':
       return { ...b, html: sanitizeRichText(b.html) };
+    case 'faq':
+      return { ...b, items: b.items.map((i) => ({ ...i, html: sanitizeRichText(i.html) })) };
+    case 'cards':
+      return { ...b, items: b.items.map((i) => ({ ...i, html: sanitizeRichText(i.html) })) };
     default:
       return b;
   }

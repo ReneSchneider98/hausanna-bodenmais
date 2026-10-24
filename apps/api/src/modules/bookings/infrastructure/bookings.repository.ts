@@ -98,6 +98,28 @@ export class BookingsRepository {
     return row;
   }
 
+  /** Aktive Buchung mit exakt diesem Aufenthalt (für Übernahme beim Kanalwechsel iCal → Beds24) */
+  async findActiveSameStay(
+    accommodationId: string,
+    arrival: string,
+    departure: string,
+    source: BookingSource,
+  ): Promise<BookingRow | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.accommodationId, accommodationId),
+          eq(bookings.arrival, arrival),
+          eq(bookings.departure, departure),
+          eq(bookings.source, source),
+          ne(bookings.status, 'cancelled'),
+        ),
+      );
+    return row;
+  }
+
   /** Buchungen, die den Zeitraum [from, to) berühren */
   async list(
     filter: BookingFilter,

@@ -164,7 +164,27 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
       if (ext.ourReference || (await this.bookings.findByChannelBookingId(ext.externalRef)))
         continue;
       seen.add(`${ext.source}:${ext.externalRef}`);
-      const existing = await this.bookings.findByExternalRef(ext.source, ext.externalRef);
+      let existing = await this.bookings.findByExternalRef(ext.source, ext.externalRef);
+      if (!existing && ext.status === 'confirmed') {
+        // Kanalwechsel: dieselbe Buchung wurde früher per iCal/WordPress importiert (UID statt ID)
+        const sameStay = await this.bookings.findActiveSameStay(
+          conn.accommodationId,
+          ext.arrival,
+          ext.departure,
+          ext.source,
+        );
+        if (
+          sameStay &&
+          sameStay.externalRef !== ext.externalRef &&
+          (sameStay.externalRef ?? '').includes('@')
+        ) {
+          existing = (await this.bookings.update(sameStay.id, {
+            externalRef: ext.externalRef,
+            ...(ext.guest ? { guest: ext.guest } : {}),
+          }))!;
+          continue;
+        }
+      }
       try {
         if (!existing) {
           if (ext.status === 'cancelled') continue;

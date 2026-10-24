@@ -92,6 +92,28 @@ export const pageBlockSchema = z.discriminatedUnion('type', [
   z.object({ id: z.string(), type: z.literal('gallery'), images: z.array(imageSchema) }),
   z.object({
     id: z.string(),
+    type: z.literal('faq'),
+    heading: z.string().default(''),
+    items: z.array(
+      z.object({ question: z.string(), html: z.string(), open: z.boolean().default(false) }),
+    ),
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal('cards'),
+    heading: z.string().default(''),
+    columns: z.number().int().min(1).max(4).default(3),
+    items: z.array(
+      z.object({
+        title: z.string(),
+        html: z.string().default(''),
+        image: imageSchema.nullable().default(null),
+        url: z.string().default(''),
+      }),
+    ),
+  }),
+  z.object({
+    id: z.string(),
     type: z.literal('imageText'),
     heading: z.string().default(''),
     html: z.string().default(''),
