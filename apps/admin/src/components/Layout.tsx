@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { ROLE_LABELS } from '@hausanna/shared';
 import { Api } from '../api/endpoints.ts';
@@ -49,6 +49,32 @@ const NAV: (NavItem | 'sep')[] = [
   { to: '/benutzer', label: 'Benutzer', icon: '☺', adminOnly: true },
 ];
 
+/**
+ * Handy: Tabellen werden per CSS zu Karten (kein Seitwärts-Scrollen). Dafür bekommt jede
+ * Zelle ihre Spaltenüberschrift als data-label – für alle Tabellen, ohne sie einzeln anzupassen.
+ */
+function useTableCardLabels(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const label = () => {
+      for (const table of root.querySelectorAll<HTMLTableElement>('table.table')) {
+        const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent ?? '');
+        for (const row of table.querySelectorAll('tbody tr')) {
+          [...row.children].forEach((td, i) => {
+            const text = heads[i] ?? '';
+            if (td.getAttribute('data-label') !== text) td.setAttribute('data-label', text);
+          });
+        }
+      }
+    };
+    label();
+    const observer = new MutationObserver(label);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [ref]);
+}
+
 export function Layout() {
   const { user, logout, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
@@ -56,6 +82,8 @@ export function Layout() {
   const wide = location.pathname.startsWith('/kalender');
   const { data: settings } = useApi(() => Api.settings());
   const logo = settings?.design.logo;
+  const mainRef = useRef<HTMLElement>(null);
+  useTableCardLabels(mainRef);
 
   return (
     <div className="shell">
@@ -127,7 +155,7 @@ export function Layout() {
             </Button>
           </div>
         </header>
-        <main className={`content ${wide ? 'content-wide' : ''}`}>
+        <main ref={mainRef} className={`content ${wide ? 'content-wide' : ''}`}>
           <Outlet />
         </main>
       </div>

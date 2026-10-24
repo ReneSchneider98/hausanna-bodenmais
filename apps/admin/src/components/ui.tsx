@@ -267,11 +267,18 @@ export function PageHeader({
   intro?: ReactNode;
   actions?: ReactNode;
 }) {
+  // Satzweise umbrechen: Passt nicht alles in eine Zeile, beginnt der nächste Satz neu,
+  // statt mitten im Satz zu brechen. Satzende = zwei Kleinbuchstaben/")" + Punkt (nicht "z. B.")
+  const sentences = typeof intro === 'string' ? intro.split(/(?<=[a-zäöüß)]{2}\.)\s+/) : null;
   return (
     <div className="page-header">
       <div>
         <h1>{title}</h1>
-        {intro ? <p className="muted">{intro}</p> : null}
+        {intro ? (
+          <p className="muted page-intro">
+            {sentences ? sentences.map((s, i) => <span key={i}>{s}</span>) : intro}
+          </p>
+        ) : null}
       </div>
       {actions ? <div className="page-actions">{actions}</div> : null}
     </div>

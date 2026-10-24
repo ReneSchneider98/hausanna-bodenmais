@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, type Booking } from '@hausanna/shared';
 import { Api } from '../api/endpoints.ts';
 import { BookingDrawer, NewBookingDialog } from '../components/BookingDialogs.tsx';
+import { MobileMonthCalendar } from '../components/MobileMonthCalendar.tsx';
 import { Button, EmptyState, ErrorBox, Loading, PageHeader } from '../components/ui.tsx';
 import {
   barPosition,
@@ -15,12 +16,14 @@ import {
 } from '../lib/dates.ts';
 import { guestName, SOURCE_LABEL, SOURCES } from '../lib/labels.ts';
 import { useApi } from '../lib/useApi.ts';
+import { useMediaQuery } from '../lib/useMediaQuery.ts';
 
 const NAME_COL = 170;
 const DAY_COL = 40;
 
 export function CalendarPage() {
   const today = todayIso();
+  const phone = useMediaQuery('(max-width: 640px)');
   const [month, setMonth] = useState(monthStart(today));
   const days = useMemo(() => monthDays(month), [month]);
   const from = days[0]!.date;
@@ -79,7 +82,11 @@ export function CalendarPage() {
     <div className="stack" onMouseUp={endDrag} onMouseLeave={() => setDrag(null)}>
       <PageHeader
         title="Kalender"
-        intro="Klicke auf einen freien Tag (oder ziehe über mehrere Tage), um eine Buchung oder Sperre anzulegen. Klicke auf einen Balken für Details."
+        intro={
+          phone
+            ? 'Tippe auf einen freien Tag, um eine Buchung oder Sperre anzulegen. Tippe auf einen belegten Tag für Details.'
+            : 'Klicke auf einen freien Tag (oder ziehe über mehrere Tage), um eine Buchung oder Sperre anzulegen. Klicke auf einen Balken für Details.'
+        }
         actions={
           <Button
             variant="primary"
@@ -119,7 +126,20 @@ export function CalendarPage() {
         />
       ) : null}
 
-      {data && accs.length > 0 ? (
+      {data && accs.length > 0 && phone ? (
+        <MobileMonthCalendar
+          accommodations={accs}
+          bookings={data.bookings}
+          days={days}
+          today={today}
+          onSelect={setSelected}
+          onCreate={(accommodationId, arrival) =>
+            setNewBooking({ accommodationId, arrival, departure: addDays(arrival, 1) })
+          }
+        />
+      ) : null}
+
+      {data && accs.length > 0 && !phone ? (
         <div className="cal-scroll" ref={scrollRef}>
           <div
             className="cal-grid"
