@@ -1,0 +1,33 @@
+[Unit]
+Description=Haus Anna – API (NestJS)
+Documentation=https://github.com/ReneSchneider98/hausanna-bodenmais
+After=network-online.target postgresql.service hausanna-mongodb.service
+Wants=network-online.target postgresql.service hausanna-mongodb.service
+
+[Service]
+Type=simple
+User=hausanna
+Group=hausanna
+WorkingDirectory=/opt/hausanna/apps/api
+EnvironmentFile=/etc/hausanna/api.env
+ExecStart=/usr/bin/env node /opt/hausanna/apps/api/dist/main.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Härtung
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/hausanna/uploads
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

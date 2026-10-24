@@ -24,5 +24,6 @@ import { HealthController } from './presentation/health.controller.js';
       useFactory: (checks: DependencyHealthPort[]) => new GetHealthUseCase(checks),
     },
   ],
+  exports: [GetHealthUseCase],
 })
 export class HealthModule {}

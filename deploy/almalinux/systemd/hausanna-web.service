@@ -1,0 +1,37 @@
+[Unit]
+Description=Haus Anna – Öffentliche Webseite (React Router SSR)
+Documentation=https://github.com/ReneSchneider98/hausanna-bodenmais
+After=network-online.target hausanna-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hausanna
+Group=hausanna
+WorkingDirectory=/opt/hausanna/apps/web
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HOST=127.0.0.1
+Environment=API_INTERNAL_URL=http://127.0.0.1:3000
+# Optionale Zusatz-Variablen (z. B. PUBLIC_BASE_URL)
+EnvironmentFile=-/etc/hausanna/web.env
+ExecStart=/opt/hausanna/apps/web/node_modules/.bin/react-router-serve /opt/hausanna/apps/web/build/server/index.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Härtung
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryMax=768M
+
+[Install]
+WantedBy=multi-user.target

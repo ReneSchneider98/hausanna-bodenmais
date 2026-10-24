@@ -1,0 +1,9 @@
+[Unit]
+Description=Haus Anna – Tägliches Backup (PostgreSQL, MongoDB, Uploads)
+After=postgresql.service hausanna-mongodb.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/hausanna-backup
+Nice=10
+IOSchedulingClass=idle

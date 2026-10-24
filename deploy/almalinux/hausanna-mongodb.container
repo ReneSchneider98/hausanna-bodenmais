@@ -1,0 +1,29 @@
+# Podman Quadlet: MongoDB für Haus Anna
+# Ziel: /etc/containers/systemd/hausanna-mongodb.container
+# systemd erzeugt daraus automatisch hausanna-mongodb.service.
+[Unit]
+Description=Haus Anna – MongoDB (Logs, Design, Inhalte)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=hausanna-mongodb
+Image=docker.io/library/mongo:8
+# Nur lokal erreichbar – niemals öffentlich freigeben
+PublishPort=127.0.0.1:27017:27017
+Volume=hausanna-mongodb-data:/data/db
+# Enthält MONGO_INITDB_ROOT_USERNAME / MONGO_INITDB_ROOT_PASSWORD
+EnvironmentFile=/etc/hausanna/mongodb.env
+HealthCmd=mongosh --quiet --eval "db.adminCommand('ping').ok"
+HealthInterval=30s
+HealthTimeout=5s
+HealthRetries=5
+# Optional: `systemctl enable --now podman-auto-update.timer` aktualisiert das Image
+AutoUpdate=registry
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target default.target
