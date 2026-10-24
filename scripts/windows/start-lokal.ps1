@@ -1,6 +1,7 @@
 # Haus Anna - lokaler Start unter Windows
 # Liegt neben: wordpress-export.xml und dem Ordner uploads\uploads (aus dem WordPress-Export)
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 $Base = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Repo = Join-Path $Base 'hausanna-bodenmais'
 $Xml = Join-Path $Base 'wordpress-export.xml'
@@ -22,14 +23,18 @@ if ($missing.Count) {
 }
 $nodeVersion = [version]((node -v).TrimStart('v'))
 if ($nodeVersion -lt [version]'22.12.0') { Fail "Node.js $nodeVersion ist zu alt (mind. 22.12). winget upgrade OpenJS.NodeJS.LTS" }
+$ErrorActionPreference = 'Continue'
 docker info *> $null
-if ($LASTEXITCODE -ne 0) { Fail 'Docker Desktop laeuft nicht. Bitte starten, warten bis es gruen ist, dann erneut.' }
+$dockerOk = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = 'Stop'
+if (-not $dockerOk) { Fail 'Docker Desktop laeuft nicht. Bitte Docker Desktop starten, warten bis unten links "Engine running" steht, dann erneut.' }
 if (-not (Has 'pnpm')) {
   Step 'Installiere pnpm'
   npm install -g pnpm@10 | Out-Null
 }
 
 Step 'Hole den aktuellen Projektstand von GitHub'
+$ErrorActionPreference = 'Continue'  # git/pnpm/docker schreiben Hinweise nach stderr
 if (Test-Path $Repo) { git -C $Repo pull --ff-only } else { git clone https://github.com/ReneSchneider98/hausanna-bodenmais.git $Repo }
 if ($LASTEXITCODE -ne 0) { Fail 'GitHub nicht erreichbar oder kein Zugriff (Anmeldung im Browser bestaetigen)' }
 Set-Location $Repo
