@@ -99,11 +99,9 @@ export class PublicChannelsController {
   @HttpCode(202)
   webhook(@Query('secret') secret?: string): { ok: true } {
     const expected = this.env.BEDS24_WEBHOOK_SECRET;
-    const ok =
-      expected &&
-      secret &&
-      secret.length === expected.length &&
-      timingSafeEqual(Buffer.from(secret), Buffer.from(expected));
+    const a = Buffer.from(secret ?? '');
+    const b = Buffer.from(expected ?? '');
+    const ok = Boolean(expected) && a.length === b.length && timingSafeEqual(a, b);
     if (!ok) throw new DomainError('forbidden', 'Ungültiges Geheimnis');
     this.sync.triggerSoon();
     return { ok: true };

@@ -34,6 +34,9 @@ import {
 } from '../infrastructure/bookings.repository.js';
 
 export const CLOCK = Symbol('CLOCK');
+
+/** Eigene Buchungen, die an den Kanal (Beds24) gemeldet werden */
+const OWN_SOURCES: string[] = ['website', 'admin', 'blocked', 'wordpress'];
 export type Clock = () => Date;
 
 @Injectable()
@@ -150,8 +153,8 @@ export class BookingsService {
       contactPhone: site.info.contact.phone,
       contactEmail: site.info.contact.email,
     };
-    // Mailfehler dürfen die Buchung nicht verhindern → nur protokollieren
-    await Promise.all([
+    // Mails im Hintergrund: ein langsamer Mailserver darf die Antwort an den Gast nicht verzögern
+    void Promise.all([
       this.mail.send(guestConfirmationMail(mailData)),
       this.mail.send(ownerNotificationMail(mailData, this.env.MAIL_OWNER_TO)),
     ]).catch((e: unknown) =>
@@ -206,7 +209,9 @@ export class BookingsService {
       ...input,
       guest: input.guest === undefined ? undefined : input.guest,
       channelSyncState:
-        this.env.CHANNEL_PROVIDER === 'beds24' ? 'pending' : existing.channelSyncState,
+        this.env.CHANNEL_PROVIDER === 'beds24' && OWN_SOURCES.includes(existing.source)
+          ? 'pending'
+          : existing.channelSyncState,
     });
     const cancelled = input.status === 'cancelled' && existing.status !== 'cancelled';
     this.bus.emit('booking.changed', {

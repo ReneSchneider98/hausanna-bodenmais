@@ -3,7 +3,11 @@ import { z } from 'zod';
 /** Kalenderdatum ohne Uhrzeit, z. B. "2026-11-02". */
 export const isoDateSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum im Format JJJJ-MM-TT erwartet');
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum im Format JJJJ-MM-TT erwartet')
+  .refine((d) => {
+    const t = new Date(`${d}T00:00:00Z`);
+    return !Number.isNaN(t.getTime()) && t.toISOString().startsWith(d);
+  }, 'Ungültiges Datum');
 export type IsoDate = z.infer<typeof isoDateSchema>;
 
 export const idSchema = z.string().uuid();

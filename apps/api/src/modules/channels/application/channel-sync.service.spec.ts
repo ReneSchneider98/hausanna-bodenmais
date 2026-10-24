@@ -63,7 +63,12 @@ class FakeBookings {
   }
 }
 
-const conn = { accommodationId: 'acc', accommodationName: 'FeWo 2', lastError: null } as never;
+const conn = {
+  accommodationId: 'acc',
+  accommodationName: 'FeWo 2',
+  lastError: null,
+  icalImportUrls: ['https://admin.booking.com/hotel/ical.ics?t=1'],
+} as never;
 const ext = (o: Partial<ExternalBooking>): ExternalBooking => ({
   externalRef: '1',
   arrival: '2026-11-02',
@@ -138,8 +143,55 @@ describe('ChannelSyncService.reconcile', () => {
 
   it('iCal: aus dem Feed verschwundene Buchung gilt als storniert', async () => {
     const { svc, bookings } = setup(false);
+    const keep = ext({
+      externalRef: 'b@booking.com',
+      arrival: '2026-12-01',
+      departure: '2026-12-03',
+    });
+    await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' }), keep], '2026-10-24');
+    await svc.reconcile(conn, [keep], '2026-10-24');
+    expect(bookings.rows[0]!.status).toBe('cancelled');
+    expect(bookings.rows[1]!.status).toBe('confirmed');
+  });
+
+  it('iCal: leerer Feed storniert NICHTS, sondern warnt', async () => {
+    const { svc, bookings, events } = setup(false);
     await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' })], '2026-10-24');
     await svc.reconcile(conn, [], '2026-10-24');
-    expect(bookings.rows[0]!.status).toBe('cancelled');
+    expect(bookings.rows[0]!.status).toBe('confirmed');
+    expect(events.at(-1)).toContain('NICHT storniert');
+  });
+
+  it('iCal: Portal ohne eingetragenen Feed wird nie storniert', async () => {
+    const { svc, bookings } = setup(false);
+    bookings.rows.push({
+      id: 'x',
+      accommodationId: 'acc',
+      arrival: '2026-12-10',
+      departure: '2026-12-12',
+      status: 'confirmed',
+      source: 'airbnb',
+      externalRef: 'z@airbnb.com',
+      channelBookingId: null,
+    });
+    await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' })], '2026-10-24');
+    expect(bookings.rows.find((r) => r.id === 'x')!.status).toBe('confirmed');
+  });
+
+  it('Doppelbuchungs-Alarm nur einmal je Kanalbuchung', async () => {
+    const { svc, bookings, events } = setup(true);
+    bookings.rows.push({
+      id: 'w',
+      accommodationId: 'acc',
+      arrival: '2026-11-03',
+      departure: '2026-11-06',
+      status: 'confirmed',
+      source: 'website',
+      externalRef: null,
+      channelBookingId: null,
+    });
+    await svc.reconcile(conn, [ext({ source: 'airbnb' })], '2026-10-24');
+    await svc.reconcile(conn, [ext({ source: 'airbnb' })], '2026-10-24');
+    expect(events.filter((e) => e.includes('DOPPELBUCHUNG'))).toHaveLength(1);
   });
 });

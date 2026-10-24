@@ -11,6 +11,9 @@ import { toUser, UsersRepository } from '../infrastructure/users.repository.js';
 /** Einfacher Schutz gegen Passwort-Raten: max. 10 Versuche / 15 Min. pro E-Mail */
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60_000;
+/** gültiger scrypt-Hash eines zufälligen Passworts (für Laufzeit-Gleichheit) */
+const DUMMY_HASH =
+  'scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA==$' + Buffer.alloc(64).toString('base64');
 
 @Injectable()
 export class AuthService implements OnApplicationBootstrap {
@@ -36,28 +39,42 @@ export class AuthService implements OnApplicationBootstrap {
     this.logger.log(`Erster Admin angelegt: ${this.env.ADMIN_EMAIL}`);
   }
 
-  async login(email: string, password: string): Promise<{ token: string; user: User }> {
-    const key = email.toLowerCase();
+  /** Zählt einen Versuch (vor der Prüfung, damit parallele Anfragen nicht durchrutschen). */
+  private hit(key: string, limit: number): boolean {
     const now = Date.now();
     const a = this.attempts.get(key);
-    if (a && now - a.since < WINDOW_MS && a.count >= MAX_ATTEMPTS) {
+    const next =
+      a && now - a.since < WINDOW_MS ? { ...a, count: a.count + 1 } : { count: 1, since: now };
+    if (this.attempts.size > 10_000) this.attempts.clear();
+    this.attempts.set(key, next);
+    return next.count <= limit;
+  }
+
+  async login(
+    email: string,
+    password: string,
+    ip = 'unbekannt',
+  ): Promise<{ token: string; user: User }> {
+    const key = email.toLowerCase();
+    // Pro IP großzügiger, pro Konto streng – beides vor der Passwortprüfung
+    const ipOk = this.hit(`ip:${ip}`, MAX_ATTEMPTS * 3);
+    const accountOk = this.hit(`mail:${key}`, MAX_ATTEMPTS);
+    if (!ipOk || !accountOk) {
       throw new DomainError(
         'forbidden',
         'Zu viele Versuche. Bitte in 15 Minuten erneut probieren.',
       );
     }
     const row = await this.users.findByEmail(key);
-    const ok = row?.active && (await verifyPassword(password, row.passwordHash));
-    if (!row || !ok) {
-      const next =
-        a && now - a.since < WINDOW_MS ? { ...a, count: a.count + 1 } : { count: 1, since: now };
-      this.attempts.set(key, next);
-      if (next.count === 5) {
+    // Unbekannte E-Mail: trotzdem rechnen, damit die Antwortzeit nichts verrät
+    const ok = await verifyPassword(password, row?.passwordHash ?? DUMMY_HASH);
+    if (!row || !row.active || !ok) {
+      if (this.attempts.get(`mail:${key}`)?.count === 5) {
         await this.events.record('warning', 'auth', `Mehrere fehlgeschlagene Logins für ${key}`);
       }
       throw new DomainError('unauthorized', 'E-Mail oder Passwort falsch');
     }
-    this.attempts.delete(key);
+    this.attempts.delete(`mail:${key}`);
     await this.users.update(row.id, { lastLoginAt: new Date() });
     const token = await signSession(
       { sub: row.id, role: row.role, ver: row.tokenVersion },

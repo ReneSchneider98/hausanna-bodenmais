@@ -8,14 +8,34 @@ import { ENV, type Env } from '../../../config/env.js';
 import { DomainError, notFound } from '../../../common/domain-error.js';
 import { MONGO_DB } from '../../../infrastructure/database/tokens.js';
 
-const ALLOWED = new Map([
-  ['image/jpeg', '.jpg'],
-  ['image/png', '.png'],
-  ['image/webp', '.webp'],
-  ['image/gif', '.gif'],
-  ['image/svg+xml', '.svg'],
-  ['image/x-icon', '.ico'],
-]);
+/** Erlaubte Bildtypen – erkannt am Dateiinhalt (nicht am Namen). Kein SVG (Skript-Gefahr). */
+const SIGNATURES: { mime: string; ext: string; test: (b: Buffer) => boolean }[] = [
+  { mime: 'image/jpeg', ext: '.jpg', test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  {
+    mime: 'image/png',
+    ext: '.png',
+    test: (b) =>
+      b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  },
+  { mime: 'image/gif', ext: '.gif', test: (b) => b.subarray(0, 4).toString('latin1') === 'GIF8' },
+  {
+    mime: 'image/webp',
+    ext: '.webp',
+    test: (b) =>
+      b.subarray(0, 4).toString('latin1') === 'RIFF' &&
+      b.subarray(8, 12).toString('latin1') === 'WEBP',
+  },
+  {
+    mime: 'image/x-icon',
+    ext: '.ico',
+    test: (b) => b[0] === 0 && b[1] === 0 && b[2] === 1 && b[3] === 0,
+  },
+];
+
+export function detectImageType(data: Buffer): { mime: string; ext: string } | null {
+  const hit = SIGNATURES.find((s) => s.test(data));
+  return hit ? { mime: hit.mime, ext: hit.ext } : null;
+}
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 interface MediaDoc extends Omit<MediaItem, 'id'> {
@@ -74,14 +94,14 @@ export class MediaService {
     alt = '',
     folder = 'uploads',
   ): Promise<MediaItem> {
-    const ext = ALLOWED.get(file.mimetype);
-    if (!ext)
-      throw new DomainError('validation', 'Nur Bilder (JPG, PNG, WebP, GIF, SVG, ICO) erlaubt');
+    const type = detectImageType(file.buffer);
+    if (!type) throw new DomainError('validation', 'Nur Bilder (JPG, PNG, WebP, GIF, ICO) erlaubt');
+    const ext = type.ext;
     if (file.size > MAX_UPLOAD_BYTES)
       throw new DomainError('validation', 'Datei zu groß (max. 15 MB)');
     const base = safeFileName(file.originalname).replace(/\.[a-z0-9]+$/, '');
     const filename = `${base}-${randomBytes(3).toString('hex')}${ext}`;
-    return this.store(folder, filename, file.buffer, file.mimetype, alt);
+    return this.store(folder, filename, file.buffer, type.mime, alt);
   }
 
   /** Datei ablegen + Metadaten speichern (auch vom WordPress-Import genutzt). */

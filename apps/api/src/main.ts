@@ -22,7 +22,18 @@ async function bootstrap() {
   // Bilder: lokal liefert die API sie aus, in Produktion nginx (gleicher Pfad /media)
   const uploads = resolve(env.UPLOAD_DIR);
   mkdirSync(uploads, { recursive: true });
-  app.useStaticAssets(uploads, { prefix: '/media', maxAge: '30d', dotfiles: 'deny' });
+  app.useStaticAssets(uploads, {
+    prefix: '/media',
+    maxAge: '30d',
+    dotfiles: 'deny',
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      );
+    },
+  });
   app.enableShutdownHooks();
   await app.listen(env.PORT, env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0');
 }

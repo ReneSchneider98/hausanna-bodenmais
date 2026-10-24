@@ -72,6 +72,13 @@ describe('calculateQuote', () => {
     expect(xmas.reason).toContain('Mindestaufenthalt: 5');
   });
 
+  it('begrenzt Aufenthaltsdauer und Vorlauf (Schutz vor Missbrauch)', () => {
+    expect(calculateQuote({ ...base, departure: '9999-12-31' }).available).toBe(false);
+    expect(
+      calculateQuote({ ...base, arrival: '2030-01-01', departure: '2030-01-05' }).reason,
+    ).toContain('Voraus');
+  });
+
   it('lehnt zu viele Gäste, Vergangenheit und zu kurze Aufenthalte ab', () => {
     expect(calculateQuote({ ...base, adults: 5 }).available).toBe(false);
     expect(

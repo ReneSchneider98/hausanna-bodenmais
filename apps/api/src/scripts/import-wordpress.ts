@@ -8,6 +8,8 @@
  *   --skip-bookings      keine Buchungen importieren
  *   --overwrite-pages    vorhandene Seiten überschreiben (Standard: nur fehlende anlegen)
  *   --skip-content       Bilder/Seiten/Design (MongoDB) auslassen, nur Postgres-Daten
+ *   --update-existing    schon importierte Datensätze mit WordPress-Stand überschreiben
+ *                        (Standard: nur Neues anlegen – Änderungen im Admin bleiben erhalten)
  *
  * Wiederholbar: Datensätze werden über ihre WordPress-ID wiedererkannt und aktualisiert.
  */
@@ -62,6 +64,7 @@ async function main() {
       preview: { type: 'string' },
       'skip-bookings': { type: 'boolean', default: false },
       'overwrite-pages': { type: 'boolean', default: false },
+      'update-existing': { type: 'boolean', default: false },
       'skip-content': { type: 'boolean', default: false },
     },
   });
@@ -104,8 +107,14 @@ async function importAll(
   plan: ImportPlan,
   uploadsRoot: string,
   known: Set<string>,
-  opts: { 'skip-bookings'?: boolean; 'overwrite-pages'?: boolean; 'skip-content'?: boolean },
+  opts: {
+    'skip-bookings'?: boolean;
+    'overwrite-pages'?: boolean;
+    'skip-content'?: boolean;
+    'update-existing'?: boolean;
+  },
 ) {
+  const update = Boolean(opts['update-existing']);
   const accRepo = app.get(AccommodationsRepository);
   const bookingRepo = app.get(BookingsRepository);
   const media = app.get(MediaService);
@@ -132,8 +141,9 @@ async function importAll(
   // 2. Zusatzleistungen
   for (const e of plan.extras) {
     const existing = await accRepo.findExtraByLegacyId(e.legacyId);
-    if (existing) await accRepo.updateExtra(existing.id, e.input);
-    else await accRepo.insertExtra(e.input, e.legacyId);
+    if (existing) {
+      if (update) await accRepo.updateExtra(existing.id, e.input);
+    } else await accRepo.insertExtra(e.input, e.legacyId);
   }
 
   // 3. Saisons
@@ -142,7 +152,9 @@ async function importAll(
     const input = { name: s.name, startDate: s.startDate, endDate: s.endDate };
     const existing = await accRepo.findSeasonByLegacyId(s.legacyId);
     const saved = existing
-      ? await accRepo.updateSeason(existing.id, input)
+      ? update
+        ? await accRepo.updateSeason(existing.id, input)
+        : existing
       : await accRepo.insertSeason(input, s.legacyId);
     seasonIds.set(s.legacyId, saved!.id);
   }
@@ -152,9 +164,12 @@ async function importAll(
   for (const a of plan.accommodations) {
     const existing = await accRepo.findByLegacyId(a.legacyId);
     const saved = existing
-      ? await accRepo.update(existing.id, a.input)
+      ? update
+        ? await accRepo.update(existing.id, a.input)
+        : existing
       : await accRepo.insert(a.input, a.legacyId);
     accIds.set(a.legacyId, saved!.id);
+    if (existing && !update) continue; // Preise im Admin nicht überschreiben
     const prices = plan.seasonPrices
       .filter((p) => p.accommodationLegacyId === a.legacyId && seasonIds.has(p.seasonLegacyId))
       .map((p) => ({
@@ -192,6 +207,7 @@ async function importAll(
       try {
         const existing = await bookingRepo.findByExternalRef(b.source, b.externalRef);
         if (existing) {
+          if (!update) continue; // Änderungen/Stornos im Admin bleiben erhalten
           await bookingRepo.update(existing.id, data);
           updated++;
         } else {

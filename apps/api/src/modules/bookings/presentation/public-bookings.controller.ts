@@ -10,6 +10,7 @@ import {
   quoteRequestSchema,
 } from '@hausanna/shared';
 import { Public } from '../../../common/auth.decorators.js';
+import { RateLimit } from '../../../common/rate-limit.js';
 import { ZodPipe } from '../../../common/zod.pipe.js';
 import { BookingsService } from '../application/bookings.service.js';
 
@@ -28,12 +29,14 @@ export class PublicBookingsController {
   }
 
   @Post('quote')
+  @RateLimit(120, 60_000)
   @HttpCode(200)
   quote(@Body(new ZodPipe(quoteRequestSchema)) body: QuoteRequest): Promise<PriceQuote> {
     return this.bookings.quote(body);
   }
 
   @Post('bookings')
+  @RateLimit(5, 10 * 60_000)
   create(
     @Body(new ZodPipe(createPublicBookingSchema)) body: CreatePublicBooking,
   ): Promise<PublicBookingResult> {

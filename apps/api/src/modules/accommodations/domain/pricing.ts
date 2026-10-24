@@ -34,6 +34,10 @@ export interface PricingInput {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+/** Schutz vor Missbrauch: max. Aufenthalt und max. Vorlauf für Buchungen */
+export const MAX_NIGHTS = 60;
+export const MAX_ADVANCE_DAYS = 730;
+
 /**
  * Reine Preisberechnung (ohne Datenbank).
  * Pro Nacht gilt der Saisonpreis der Saison, in der die Nacht liegt, sonst der Grundpreis.
@@ -43,6 +47,22 @@ export function calculateQuote(input: PricingInput): PriceQuote {
   const { accommodation: acc, arrival, departure } = input;
   const guests = input.adults + input.children;
   const nights = arrival < departure ? nightsBetween(arrival, departure) : 0;
+  if (
+    nights > MAX_NIGHTS ||
+    (arrival >= input.today && nightsBetween(input.today, arrival) > MAX_ADVANCE_DAYS)
+  ) {
+    return {
+      available: false,
+      reason:
+        nights > MAX_NIGHTS
+          ? `Online sind höchstens ${MAX_NIGHTS} Nächte buchbar – bitte fragen Sie uns direkt.`
+          : 'So weit im Voraus ist noch keine Buchung möglich.',
+      nights,
+      minNights: acc.minNights,
+      lines: [],
+      total: 0,
+    };
+  }
 
   const seasonFor = (night: string) =>
     input.seasons.find((s) => s.startDate <= night && night <= s.endDate);

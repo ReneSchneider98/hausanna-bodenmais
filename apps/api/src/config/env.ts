@@ -57,7 +57,10 @@ const envSchema = z
       .transform((v) => v === 'true'),
   })
   .superRefine((env, ctx) => {
-    if (env.NODE_ENV === 'production' && env.JWT_SECRET.startsWith('dev-secret')) {
+    if (
+      (env.NODE_ENV === 'production' || env.PUBLIC_BASE_URL.startsWith('https://')) &&
+      env.JWT_SECRET.startsWith('dev-secret')
+    ) {
       ctx.addIssue({ code: 'custom', path: ['JWT_SECRET'], message: 'In Produktion setzen!' });
     }
     if (env.CHANNEL_PROVIDER === 'beds24' && !env.BEDS24_REFRESH_TOKEN) {

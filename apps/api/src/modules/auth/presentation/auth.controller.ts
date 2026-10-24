@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { type Login, loginSchema, type User } from '@hausanna/shared';
 import { ENV, type Env } from '../../../config/env.js';
 import { CurrentUser, Public, type SessionUser } from '../../../common/auth.decorators.js';
@@ -19,9 +19,10 @@ export class AuthController {
   @HttpCode(200)
   async login(
     @Body(new ZodPipe(loginSchema)) body: Login,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<User> {
-    const { token, user } = await this.auth.login(body.email, body.password);
+    const { token, user } = await this.auth.login(body.email, body.password, req.ip);
     res.cookie(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: 'strict',

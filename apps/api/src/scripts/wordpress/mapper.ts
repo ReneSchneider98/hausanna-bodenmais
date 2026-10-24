@@ -9,6 +9,7 @@ import type {
   Page,
   PageBlock,
 } from '@hausanna/shared';
+import { sanitizeRichText } from '../../modules/content/domain/sanitize.js';
 import { phpUnserialize, type PhpValue } from './php-unserialize.js';
 import { contentModules, parseShortcodes, type ShortcodeNode } from './shortcodes.js';
 import type { WpItem } from './wp-export.js';
@@ -88,7 +89,7 @@ export function cleanHtml(html: string, known: Set<string>): string {
   } else {
     out = out.replace(/\n\s*\n/g, '').replace(/\n/g, ' ');
   }
-  return out;
+  return sanitizeRichText(out);
 }
 
 const stripTags = (s: string) =>

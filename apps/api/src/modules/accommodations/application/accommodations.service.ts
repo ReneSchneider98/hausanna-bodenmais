@@ -11,7 +11,19 @@ import type {
 } from '@hausanna/shared';
 import { DomainError, notFound } from '../../../common/domain-error.js';
 import { pgErrorCode, PG_ERROR } from '../../../infrastructure/database/drizzle.js';
+import { sanitizeRichText } from '../../content/domain/sanitize.js';
 import { AccommodationsRepository } from '../infrastructure/accommodations.repository.js';
+
+/** HTML-Felder säubern (Schutz vor Skripten in Beschreibungen) */
+function clean<T extends Partial<AccommodationInput>>(input: T): T {
+  return {
+    ...input,
+    ...(input.descriptionHtml !== undefined
+      ? { descriptionHtml: sanitizeRichText(input.descriptionHtml) }
+      : {}),
+    ...(input.priceNote !== undefined ? { priceNote: sanitizeRichText(input.priceNote) } : {}),
+  };
+}
 
 export function toSummary(a: Accommodation): AccommodationSummary {
   return {
@@ -55,7 +67,7 @@ export class AccommodationsService {
 
   async create(input: AccommodationInput): Promise<Accommodation> {
     try {
-      return await this.repo.insert(input);
+      return await this.repo.insert(clean(input));
     } catch (e) {
       if (pgErrorCode(e) === PG_ERROR.uniqueViolation) {
         throw new DomainError('conflict', `Die Adresse "${input.slug}" ist schon vergeben`);
@@ -66,7 +78,7 @@ export class AccommodationsService {
 
   async update(id: string, input: Partial<AccommodationInput>): Promise<Accommodation> {
     try {
-      const a = await this.repo.update(id, input);
+      const a = await this.repo.update(id, clean(input));
       if (!a) throw notFound('Unterkunft');
       return a;
     } catch (e) {
