@@ -93,8 +93,42 @@ flowchart TD
 
 Details zur Analyse der bisherigen Seite: [docs/analyse-bestehende-seite.md](docs/analyse-bestehende-seite.md)
 Getroffene Entscheidungen: [docs/entscheidungen.md](docs/entscheidungen.md)
+Server einrichten: [docs/deployment-almalinux.md](docs/deployment-almalinux.md)
+Beds24 einrichten: [docs/beds24.md](docs/beds24.md)
+Design-Vorgaben: [docs/design-spec.md](docs/design-spec.md)
 
 ---
+
+## Lokal testen (Schritt für Schritt)
+
+**Voraussetzungen:** Node.js 22, pnpm 10 (`corepack enable`), Docker Desktop
+
+```bash
+pnpm install
+cp .env.example apps/api/.env      # Login steht in ADMIN_EMAIL / ADMIN_PASSWORD
+pnpm db:up                         # Postgres + MongoDB in Docker
+```
+
+**Daten aus WordPress übernehmen** (Export-XML + entpackter `wp-content/uploads`-Ordner):
+
+```bash
+pnpm import:wordpress --xml data/wordpress-export.xml --uploads data/wp-uploads
+```
+
+> `data/` ist in `.gitignore` – Exporte enthalten Gästedaten und kommen **nie** ins Repo.
+> Windows-Beispiel: `--uploads D:\AI_Workspace\uploads\uploads`
+
+```bash
+pnpm dev                           # API, Webseite und Admin starten
+```
+
+| Was         | Adresse                          |
+| ----------- | -------------------------------- |
+| Webseite    | http://localhost:5173            |
+| Admin-Panel | http://localhost:5174/admin/     |
+| API-Status  | http://localhost:3000/api/health |
+
+Mails werden lokal **nicht** verschickt, sondern in MongoDB (`mail_outbox`) gespeichert.
 
 ## Entwicklung
 

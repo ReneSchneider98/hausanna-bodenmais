@@ -1,11 +1,16 @@
 import { existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
+/** apps/api (gleich, ob aus src/ oder dist/ gestartet) */
+const API_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+/** Wurzel des Repos – relative Pfade (z. B. UPLOAD_DIR) beziehen sich darauf */
+export const REPO_ROOT = resolve(API_ROOT, '../..');
+
 /** Lädt apps/api/.env (nur lokal; in Produktion setzt systemd die Variablen). */
 export function loadDotEnv(): void {
-  const file = resolve(dirname(fileURLToPath(import.meta.url)), '../../.env');
+  const file = resolve(API_ROOT, '.env');
   if (existsSync(file) && process.env.NODE_ENV !== 'test') process.loadEnvFile(file);
 }
 
@@ -24,7 +29,10 @@ const envSchema = z
     CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
     /** Geheimnis für Login-Sitzungen. In Produktion Pflicht (min. 32 Zeichen). */
     JWT_SECRET: z.string().min(32).default('dev-secret-dev-secret-dev-secret-change-me'),
-    UPLOAD_DIR: z.string().default('./data/uploads'),
+    UPLOAD_DIR: z
+      .string()
+      .default('data/uploads')
+      .transform((p) => (isAbsolute(p) ? p : resolve(REPO_ROOT, p))),
     /** Erster Admin, wird beim Start angelegt, falls es noch keinen Benutzer gibt */
     ADMIN_EMAIL: z.string().email().optional(),
     ADMIN_PASSWORD: z.string().min(10).optional(),
