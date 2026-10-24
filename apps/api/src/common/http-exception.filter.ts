@@ -4,9 +4,12 @@ import {
   type ExceptionFilter,
   HttpException,
   HttpStatus,
+  Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { EVENT_LOG, type EventLogPort } from '../modules/events/domain/event-log.port.js';
 import { DomainError } from './domain-error.js';
 
 const STATUS: Record<DomainError['code'], number> = {
@@ -22,6 +25,10 @@ const STATUS: Record<DomainError['code'], number> = {
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger('Error');
+  /** gleiche Fehlermeldung höchstens 1× pro 10 Minuten ins Dashboard */
+  private readonly recent = new Map<string, number>();
+
+  constructor(@Optional() @Inject(EVENT_LOG) private readonly events?: EventLogPort) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<Response>();
@@ -43,6 +50,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return;
     }
     this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+    const req = host.switchToHttp().getRequest<Request>();
+    const message = exception instanceof Error ? exception.message : String(exception);
+    const key = `${req.method} ${req.path} ${message}`;
+    const now = Date.now();
+    if ((this.recent.get(key) ?? 0) < now - 10 * 60_000) {
+      this.recent.set(key, now);
+      void this.events?.record(
+        'error',
+        'system',
+        `Serverfehler bei ${req.method} ${req.path}: ${message}`,
+      );
+    }
     res.status(500).json({ statusCode: 500, message: 'Interner Fehler' });
   }
 }
