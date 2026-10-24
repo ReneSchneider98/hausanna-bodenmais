@@ -1,0 +1,22 @@
+/*
+ * Design-Tokens der bisherigen Seite (siehe docs/analyse-bestehende-seite.md).
+ * Werden später über die Design-Seite im Admin überschrieben.
+ */
+:root {
+  --color-text: #666666;
+  --color-heading: #8e8b7d;
+  --color-nav: #755b00;
+  --color-accent-dark: #513e00;
+  --color-background: #ffffff;
+  --font-body: 'Open Sans', Helvetica, Arial, Lucida, sans-serif;
+  --font-script: 'Montez', handwriting;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.7;
+}

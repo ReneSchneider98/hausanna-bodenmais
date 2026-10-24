@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.react-router/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+# Private Exporte (Gästedaten, Fotos) – nie committen
+data/
+*.WordPress.*.xml
+uploads.zip
+.DS_Store

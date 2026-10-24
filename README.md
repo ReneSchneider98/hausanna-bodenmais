@@ -23,20 +23,20 @@ flowchart TD
     Beds24 --> ABB[Airbnb]
 ```
 
-| Teil | Technik |
-|---|---|
-| Frontend (Webseite + Admin) | TypeScript, React |
-| Backend | TypeScript, NestJS, hexagonale Architektur (Ports & Adapter) |
-| Datenbanken | PostgreSQL (Buchungen, Unterkünfte, Nutzer), MongoDB (Logs, Design, Inhalte) |
-| Kanal-Anbindung | Beds24 API + Webhooks → Booking.com & Airbnb |
-| Server | IONOS VPS, AlmaLinux 10, Nginx, Let's Encrypt |
+| Teil                        | Technik                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| Frontend (Webseite + Admin) | TypeScript, React                                                            |
+| Backend                     | TypeScript, NestJS, hexagonale Architektur (Ports & Adapter)                 |
+| Datenbanken                 | PostgreSQL (Buchungen, Unterkünfte, Nutzer), MongoDB (Logs, Design, Inhalte) |
+| Kanal-Anbindung             | Beds24 API + Webhooks → Booking.com & Airbnb                                 |
+| Server                      | IONOS VPS, AlmaLinux 10, Nginx, Let's Encrypt                                |
 
 ### Buchungsablauf
 
-| Wo bucht der Gast? | Was passiert |
-|---|---|
-| **Webseite** | Backend speichert die Buchung → meldet sie an Beds24 → Booking.com und Airbnb sind in Sekunden gesperrt → Gast bekommt sofort die Bestätigung |
-| **Booking.com / Airbnb** | Beds24 sperrt den anderen Kanal sofort → Webhook an unser Backend → Buchung erscheint im Kalender |
+| Wo bucht der Gast?       | Was passiert                                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Webseite**             | Backend speichert die Buchung → meldet sie an Beds24 → Booking.com und Airbnb sind in Sekunden gesperrt → Gast bekommt sofort die Bestätigung |
+| **Booking.com / Airbnb** | Beds24 sperrt den anderen Kanal sofort → Webhook an unser Backend → Buchung erscheint im Kalender                                             |
 
 > ⚠️ **Regel:** Preise, Sperren und Unterkünfte werden **nur im Admin-Panel** geändert, nie direkt in Beds24, Booking.com oder Airbnb. Sonst gibt es zwei „Wahrheiten“.
 
@@ -44,14 +44,14 @@ flowchart TD
 
 ## Benötigte Anbieter & Kosten
 
-| Anbieter | Wofür | Kosten / Monat |
-|---|---|---|
-| **IONOS VPS** | Server (AlmaLinux 10). Gewählt: **VPS M+ (4 GB RAM)**. Weniger RAM nicht empfohlen, da Postgres + MongoDB + Node laufen | ca. **4 €** ¹ |
-| **Beds24** | Channel-Manager: Echtzeit-Sync mit Booking.com und Airbnb | ca. **11 €** ² |
-| IONOS Domain + E-Mail | `hausanna-bodenmais.de`, `info@…`, Versand der Buchungsmails (SMTP) | bestehender Vertrag ³ |
-| Let's Encrypt | SSL-Zertifikat | 0 € |
-| GitHub | Code, CI | 0 € |
-| **Summe (laufend)** | | **ca. 15 €** |
+| Anbieter              | Wofür                                                                                                                   | Kosten / Monat        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| **IONOS VPS**         | Server (AlmaLinux 10). Gewählt: **VPS M+ (4 GB RAM)**. Weniger RAM nicht empfohlen, da Postgres + MongoDB + Node laufen | ca. **4 €** ¹         |
+| **Beds24**            | Channel-Manager: Echtzeit-Sync mit Booking.com und Airbnb                                                               | ca. **11 €** ²        |
+| IONOS Domain + E-Mail | `hausanna-bodenmais.de`, `info@…`, Versand der Buchungsmails (SMTP)                                                     | bestehender Vertrag ³ |
+| Let's Encrypt         | SSL-Zertifikat                                                                                                          | 0 €                   |
+| GitHub                | Code, CI                                                                                                                | 0 €                   |
+| **Summe (laufend)**   |                                                                                                                         | **ca. 15 €**          |
 
 **Nicht in der Summe:** Provisionen der Portale pro Buchung, die bei der Vermieterin anfallen (Booking.com üblicherweise ca. 15 %, Airbnb je nach Gebührenmodell). Buchungen über die eigene Webseite sind **provisionsfrei**.
 
@@ -65,15 +65,15 @@ flowchart TD
 
 **Zusätzliche Kosten:** ca. **+0,55 €/Monat** bei Beds24 (Schätzung). Der Server bleibt gleich.
 
-| # | Wo | Was |
-|---|---|---|
-| 1 | **Admin-Panel → Unterkünfte → Neu** | Name, Größe, max. Personen, Ausstattung, Beschreibung, Fotos, Preise/Saisons, Mindestaufenthalt anlegen. Erscheint danach automatisch auf der Webseite und im Menü (erst auf „Veröffentlicht“ stellen, wenn die Schritte 2–5 erledigt sind) |
-| 2 | **Booking.com Extranet** | Neuen Zimmertyp bzw. neue Unterkunft anlegen |
-| 3 | **Airbnb** | Neues Inserat anlegen |
-| 4 | **Beds24** | Neue Unterkunft (Room) anlegen und mit dem Booking.com-Zimmer und dem Airbnb-Inserat verknüpfen (Mapping) |
-| 5 | **Admin-Panel → Kanäle** | Beds24-Room-ID bei der neuen Unterkunft eintragen, Kanäle aktivieren |
-| 6 | **Test** | Im Admin einen Testzeitraum sperren und prüfen, ob er bei Booking.com und Airbnb gesperrt ist. Danach wieder freigeben |
-| 7 | **Admin-Panel → Unterkünfte** | Auf „Veröffentlicht“ stellen |
+| #   | Wo                                  | Was                                                                                                                                                                                                                                         |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Admin-Panel → Unterkünfte → Neu** | Name, Größe, max. Personen, Ausstattung, Beschreibung, Fotos, Preise/Saisons, Mindestaufenthalt anlegen. Erscheint danach automatisch auf der Webseite und im Menü (erst auf „Veröffentlicht“ stellen, wenn die Schritte 2–5 erledigt sind) |
+| 2   | **Booking.com Extranet**            | Neuen Zimmertyp bzw. neue Unterkunft anlegen                                                                                                                                                                                                |
+| 3   | **Airbnb**                          | Neues Inserat anlegen                                                                                                                                                                                                                       |
+| 4   | **Beds24**                          | Neue Unterkunft (Room) anlegen und mit dem Booking.com-Zimmer und dem Airbnb-Inserat verknüpfen (Mapping)                                                                                                                                   |
+| 5   | **Admin-Panel → Kanäle**            | Beds24-Room-ID bei der neuen Unterkunft eintragen, Kanäle aktivieren                                                                                                                                                                        |
+| 6   | **Test**                            | Im Admin einen Testzeitraum sperren und prüfen, ob er bei Booking.com und Airbnb gesperrt ist. Danach wieder freigeben                                                                                                                      |
+| 7   | **Admin-Panel → Unterkünfte**       | Auf „Veröffentlicht“ stellen                                                                                                                                                                                                                |
 
 > Unterkunft **entfernen:** im Admin auf „Archiviert“ stellen (bestehende Buchungen bleiben erhalten), danach bei Beds24, Booking.com und Airbnb deaktivieren.
 
@@ -81,15 +81,57 @@ flowchart TD
 
 ## Umsetzungsplan
 
-| Phase | Inhalt | Status |
-|---|---|---|
-| 0 | Setup: Monorepo (pnpm), Docker Compose (Postgres + MongoDB), Linting, CI | ⏳ |
-| 1 | Backend-Kern: Unterkünfte, Preise/Saisons, Verfügbarkeit, Buchungen, Login/Rollen | ⏳ |
-| 2 | Öffentliche Seite 1:1 + Buchungsformular | ⏳ |
-| 3 | Admin: Dashboard (Nachrichten, Infos, Fehler), Unterkünfte, Kalender, Benutzer | ⏳ |
-| 4 | Channel-Port + Beds24-Adapter (Booking.com, Airbnb), iCal-Adapter als Fallback | ⏳ |
-| 5 | Design-Seite: Farben, Fonts, Logo, Bilder, Texte | ⏳ |
-| 6 | Go-Live: Daten aus WordPress/MotoPress migrieren, Server einrichten, DNS umstellen | ⏳ |
+| Phase | Inhalt                                                                             | Status |
+| ----- | ---------------------------------------------------------------------------------- | ------ |
+| 0     | Setup: Monorepo (pnpm), Docker Compose (Postgres + MongoDB), Linting, CI           | ✅     |
+| 1     | Backend-Kern: Unterkünfte, Preise/Saisons, Verfügbarkeit, Buchungen, Login/Rollen  | ⏳     |
+| 2     | Öffentliche Seite 1:1 + Buchungsformular                                           | ⏳     |
+| 3     | Admin: Dashboard (Nachrichten, Infos, Fehler), Unterkünfte, Kalender, Benutzer     | ⏳     |
+| 4     | Channel-Port + Beds24-Adapter (Booking.com, Airbnb), iCal-Adapter als Fallback     | ⏳     |
+| 5     | Design-Seite: Farben, Fonts, Logo, Bilder, Texte                                   | ⏳     |
+| 6     | Go-Live: Daten aus WordPress/MotoPress migrieren, Server einrichten, DNS umstellen | ⏳     |
 
 Details zur Analyse der bisherigen Seite: [docs/analyse-bestehende-seite.md](docs/analyse-bestehende-seite.md)
 Getroffene Entscheidungen: [docs/entscheidungen.md](docs/entscheidungen.md)
+
+---
+
+## Entwicklung
+
+**Voraussetzungen:** Node.js 22 (siehe `.nvmrc`), pnpm 10, Docker
+
+```bash
+pnpm install
+cp .env.example apps/api/.env   # optional, Standardwerte passen für lokal
+pnpm db:up                      # Postgres + MongoDB starten
+pnpm dev                        # API, Webseite und Admin gleichzeitig
+```
+
+| App            | URL (lokal)                      | Ordner       |
+| -------------- | -------------------------------- | ------------ |
+| Webseite (SSR) | http://localhost:5173            | `apps/web`   |
+| Admin-Panel    | http://localhost:5174            | `apps/admin` |
+| API            | http://localhost:3000/api        | `apps/api`   |
+| Health-Check   | http://localhost:3000/api/health |              |
+
+| Befehl           | Was                             |
+| ---------------- | ------------------------------- |
+| `pnpm lint`      | oxlint                          |
+| `pnpm format`    | Prettier                        |
+| `pnpm typecheck` | TypeScript-Prüfung aller Pakete |
+| `pnpm test`      | Unit- und E2E-Tests (Vitest)    |
+| `pnpm build`     | alles bauen                     |
+
+### Ordnerstruktur
+
+```
+apps/
+  api/      NestJS, hexagonal: src/modules/<bereich>/{domain,application,infrastructure,presentation}
+  web/      Öffentliche Seite (React Router, Server-Side Rendering für SEO)
+  admin/    Admin-Panel (React + Vite)
+packages/
+  shared/   Gemeinsame Typen und Zod-Schemas
+docs/       Analyse, Entscheidungen
+```
+
+> Private Exporte (WordPress-XML mit Gästedaten, Fotos) gehören in `data/`. Der Ordner ist in `.gitignore` und wird nie committet.

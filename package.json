@@ -1,0 +1,27 @@
+{
+  "name": "hausanna-bodenmais",
+  "private": true,
+  "description": "Webseite + Admin-Panel für Haus Anna Bodenmais",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @hausanna/shared build && concurrently -n api,web,admin -c blue,green,magenta \"pnpm --filter @hausanna/api start:dev\" \"pnpm --filter @hausanna/web dev\" \"pnpm --filter @hausanna/admin dev\"",
+    "build": "pnpm -r build",
+    "lint": "oxlint apps packages",
+    "typecheck": "pnpm --filter @hausanna/shared build && pnpm -r typecheck",
+    "test": "pnpm --filter @hausanna/shared build && pnpm -r test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "oxlint": "^1.89.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3"
+  }
+}
