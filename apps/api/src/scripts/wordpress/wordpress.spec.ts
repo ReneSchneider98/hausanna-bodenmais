@@ -49,3 +49,15 @@ describe('parseAmenities', () => {
     ]);
   });
 });
+
+import { cleanHtml } from './mapper.js';
+
+describe('cleanHtml', () => {
+  it('repariert kaputte Tags und erzeugt Absätze wie WordPress', () => {
+    const html = cleanHtml(
+      '<h2>Titel</h2>\n\nZeile 1\nZeile 2\n\n<h2Kontakt</h2>\n\nTel: 123',
+      new Set(),
+    );
+    expect(html).toBe('<h2>Titel</h2><p>Zeile 1<br />Zeile 2</p><h2>Kontakt</h2><p>Tel: 123</p>');
+  });
+});

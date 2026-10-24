@@ -7,12 +7,20 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "test": "echo \"(noch keine Tests)\""
+    "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/dancing-script": "^5.3.0",
+    "@fontsource/great-vibes": "^5.3.0",
+    "@fontsource/lato": "^5.3.0",
+    "@fontsource/montez": "^5.3.0",
+    "@fontsource/open-sans": "^5.3.0",
+    "@fontsource/roboto": "^5.3.0",
+    "@fontsource/source-sans-3": "^5.3.1",
+    "@hausanna/shared": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "@hausanna/shared": "workspace:*"
+    "react-router": "^8.5.0"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
@@ -20,6 +28,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~6.0.3",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^4.1.12"
   }
 }

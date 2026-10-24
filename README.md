@@ -81,15 +81,15 @@ flowchart TD
 
 ## Umsetzungsplan
 
-| Phase | Inhalt                                                                             | Status |
-| ----- | ---------------------------------------------------------------------------------- | ------ |
-| 0     | Setup: Monorepo (pnpm), Docker Compose (Postgres + MongoDB), Linting, CI           | ✅     |
-| 1     | Backend-Kern: Unterkünfte, Preise/Saisons, Verfügbarkeit, Buchungen, Login/Rollen  | ⏳     |
-| 2     | Öffentliche Seite 1:1 + Buchungsformular                                           | ⏳     |
-| 3     | Admin: Dashboard (Nachrichten, Infos, Fehler), Unterkünfte, Kalender, Benutzer     | ⏳     |
-| 4     | Channel-Port + Beds24-Adapter (Booking.com, Airbnb), iCal-Adapter als Fallback     | ⏳     |
-| 5     | Design-Seite: Farben, Fonts, Logo, Bilder, Texte                                   | ⏳     |
-| 6     | Go-Live: Daten aus WordPress/MotoPress migrieren, Server einrichten, DNS umstellen | ⏳     |
+| Phase | Inhalt                                                                             | Status                                   |
+| ----- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| 0     | Setup: Monorepo (pnpm), Docker Compose (Postgres + MongoDB), Linting, CI           | ✅                                       |
+| 1     | Backend-Kern: Unterkünfte, Preise/Saisons, Verfügbarkeit, Buchungen, Login/Rollen  | ✅                                       |
+| 2     | Öffentliche Seite 1:1 + Buchungsformular                                           | ✅                                       |
+| 3     | Admin: Dashboard (Nachrichten, Infos, Fehler), Unterkünfte, Kalender, Benutzer     | ✅                                       |
+| 4     | Channel-Port + Beds24-Adapter (Booking.com, Airbnb), iCal-Adapter als Fallback     | ✅                                       |
+| 5     | Design-Seite: Farben, Fonts, Logo, Bilder, Texte                                   | ✅                                       |
+| 6     | Go-Live: Daten aus WordPress/MotoPress migrieren, Server einrichten, DNS umstellen | 🟡 Import + Skripte fertig, Server fehlt |
 
 Details zur Analyse der bisherigen Seite: [docs/analyse-bestehende-seite.md](docs/analyse-bestehende-seite.md)
 Getroffene Entscheidungen: [docs/entscheidungen.md](docs/entscheidungen.md)

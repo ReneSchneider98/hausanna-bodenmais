@@ -81,15 +81,25 @@ export function cleanHtml(html: string, known: Set<string>): string {
     )
     .replace(/\[\/?[a-z_]+[^\]]*\]/g, '') // übrige Shortcodes
     .trim();
-  if (out && !/<(p|h[1-6]|ul|ol|div|table)\b/i.test(out)) {
-    out = out
-      .split(/\n\s*\n/)
-      .map((p) => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`)
-      .join('');
-  } else {
-    out = out.replace(/\n\s*\n/g, '').replace(/\n/g, ' ');
-  }
-  return sanitizeRichText(out);
+  // Kaputte Tags aus WordPress reparieren, z. B. "<h2Kontakt</h2>" → "<h2>Kontakt</h2>"
+  out = out.replace(/<(h[1-6]|p|strong|em|li)(?=[A-ZÄÖÜ])/g, '<$1>');
+  return sanitizeRichText(autop(out));
+}
+
+const BLOCK_START = /^<(p|h[1-6]|ul|ol|div|table|blockquote|hr)\b/i;
+
+/** Wie WordPress' wpautop: Leerzeilen = Absatz, einfache Umbrüche = <br>, Block-Tags bleiben. */
+export function autop(html: string): string {
+  return html
+    .split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk) =>
+      BLOCK_START.test(chunk)
+        ? chunk.replace(/\n/g, ' ')
+        : `<p>${chunk.replace(/\n/g, '<br>')}</p>`,
+    )
+    .join('');
 }
 
 const stripTags = (s: string) =>
