@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import type { PublicSite } from '../lib/types';
+import { ADMIN_URL } from './AdminBar';
 import { ContactBlock } from './ContactBlock';
 import { WaveDivider } from './WaveDivider';
 
@@ -20,7 +21,10 @@ export function Footer({ site, year }: { site: PublicSite; year: number }) {
         </nav>
       </div>
       <p className="site-footer__copy">
-        {site.settings.info.copyright || site.settings.info.siteTitle}, {year}
+        {site.settings.info.copyright || site.settings.info.siteTitle}, {year} ·{' '}
+        <a href={ADMIN_URL} rel="nofollow">
+          Anmelden
+        </a>
       </p>
     </footer>
   );

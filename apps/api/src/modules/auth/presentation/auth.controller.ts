@@ -5,7 +5,7 @@ import { ENV, type Env } from '../../../config/env.js';
 import { CurrentUser, Public, type SessionUser } from '../../../common/auth.decorators.js';
 import { ZodPipe } from '../../../common/zod.pipe.js';
 import { AuthService } from '../application/auth.service.js';
-import { SESSION_COOKIE, SESSION_HOURS } from '../domain/session-token.js';
+import { ADMIN_HINT_COOKIE, SESSION_COOKIE, SESSION_HOURS } from '../domain/session-token.js';
 
 @Controller('auth')
 export class AuthController {
@@ -30,6 +30,7 @@ export class AuthController {
       maxAge: SESSION_HOURS * 3600_000,
       path: '/',
     });
+    this.setAdminHint(res);
     return user;
   }
 
@@ -38,6 +39,7 @@ export class AuthController {
   @HttpCode(204)
   logout(@Res({ passthrough: true }) res: Response): void {
     res.clearCookie(SESSION_COOKIE, { path: '/' });
+    res.clearCookie(ADMIN_HINT_COOKIE, { path: '/' });
   }
 
   @Post('logout-everywhere')
@@ -48,10 +50,22 @@ export class AuthController {
   ): Promise<void> {
     await this.auth.logoutEverywhere(user.id);
     res.clearCookie(SESSION_COOKIE, { path: '/' });
+    res.clearCookie(ADMIN_HINT_COOKIE, { path: '/' });
   }
 
   @Get('me')
-  me(@CurrentUser() user: SessionUser): Promise<User> {
+  me(@CurrentUser() user: SessionUser, @Res({ passthrough: true }) res: Response): Promise<User> {
+    // Auch für Sitzungen von vor Einführung des Hinweises
+    this.setAdminHint(res);
     return this.auth.me(user.id);
+  }
+
+  private setAdminHint(res: Response): void {
+    res.cookie(ADMIN_HINT_COOKIE, '1', {
+      sameSite: 'strict',
+      secure: this.env.NODE_ENV === 'production',
+      maxAge: SESSION_HOURS * 3600_000,
+      path: '/',
+    });
   }
 }

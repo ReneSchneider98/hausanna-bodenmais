@@ -6,7 +6,7 @@ import { ChevronDown, CloseIcon, MenuIcon } from './Icons';
 /** Hover-Öffnen nur am Desktop mit Maus (mobil öffnet ein Tipp) */
 const desktopHover = () =>
   typeof window !== 'undefined' &&
-  window.matchMedia('(hover: hover) and (min-width: 981px)').matches;
+  window.matchMedia('(hover: hover) and (min-width: 1181px)').matches;
 
 /** Kopfzeile mit Logo, Menü (Dropdown für Unterkünfte) und Hamburger-Menü auf kleinen Bildschirmen. */
 export function Header({ site }: { site: PublicSite }) {

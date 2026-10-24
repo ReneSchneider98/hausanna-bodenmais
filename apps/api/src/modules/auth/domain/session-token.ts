@@ -10,6 +10,11 @@ export interface SessionClaims {
 
 export const SESSION_COOKIE = 'hausanna_session';
 export const SESSION_HOURS = 12;
+/**
+ * Lesbarer Hinweis "im Admin angemeldet" (kein Geheimnis): Die Webseite fragt nur dann
+ * /api/auth/me ab und zeigt "Zur Verwaltung" – normale Besucher lösen keine Anfrage aus.
+ */
+export const ADMIN_HINT_COOKIE = 'hausanna_admin';
 
 export async function signSession(claims: SessionClaims, secret: string): Promise<string> {
   return new SignJWT({ role: claims.role, ver: claims.ver })

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { ROLE_LABELS } from '@hausanna/shared';
+import { Api } from '../api/endpoints.ts';
 import { useAuth } from '../auth/AuthContext.tsx';
+import { useApi } from '../lib/useApi.ts';
 import { Button } from './ui.tsx';
 
 interface NavItem {
@@ -52,15 +54,25 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const wide = location.pathname.startsWith('/kalender');
+  const { data: settings } = useApi(() => Api.settings());
+  const logo = settings?.design.logo;
 
   return (
     <div className="shell">
       {open ? <div className="sidebar-backdrop" onClick={() => setOpen(false)} /> : null}
       <nav className={`sidebar ${open ? 'open' : ''}`} aria-label="Hauptmenü">
-        <div className="brand">
-          <strong>Haus Anna</strong>
-          <span>Verwaltung</span>
-        </div>
+        <a
+          className="brand"
+          href={SITE_URL}
+          target="_blank"
+          rel="noreferrer"
+          title="Webseite in neuem Tab öffnen"
+        >
+          <span className="brand-logo">
+            {logo ? <img src={logo.url} alt={logo.alt || 'Haus Anna'} /> : <SiteIcon />}
+          </span>
+          <span className="brand-link">Webseite öffnen ↗</span>
+        </a>
         {NAV.filter((n) => n === 'sep' || !n.adminOnly || isAdmin).map((n, i) =>
           n === 'sep' ? (
             <div className="nav-sep" key={`sep-${i}`} />
@@ -83,11 +95,6 @@ export function Layout() {
             </NavLink>
           ),
         )}
-        <div style={{ marginTop: 'auto', padding: '16px 12px 0' }}>
-          <a href={SITE_URL} target="_blank" rel="noreferrer" className="small">
-            Webseite ansehen ↗
-          </a>
-        </div>
       </nav>
       <div className="main">
         <header className="topbar">
@@ -105,11 +112,11 @@ export function Layout() {
               href={SITE_URL}
               target="_blank"
               rel="noreferrer"
-              className="icon-btn site-link"
-              title="Webseite ansehen"
-              aria-label="Webseite ansehen (neuer Tab)"
+              className="btn btn-sm site-link"
+              title="Webseite in neuem Tab öffnen"
             >
               <SiteIcon />
+              Webseite
             </a>
             <span className="user-name">
               <strong>{user?.name}</strong>{' '}

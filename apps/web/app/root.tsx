@@ -26,6 +26,7 @@ import {
 } from 'react-router';
 import type { DesignSettings } from '@hausanna/shared';
 import type { Route } from './+types/root';
+import { AdminBar } from './components/AdminBar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { fetchSite, publicBaseUrl } from './lib/api.server';
@@ -85,6 +86,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <Outlet />
       </main>
       <Footer site={site} year={year} />
+      <AdminBar />
     </>
   );
 }
