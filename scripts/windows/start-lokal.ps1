@@ -23,10 +23,9 @@ if ($missing.Count) {
 }
 $nodeVersion = [version]((node -v).TrimStart('v'))
 if ($nodeVersion -lt [version]'22.12.0') { Fail "Node.js $nodeVersion ist zu alt (mind. 22.12). winget upgrade OpenJS.NodeJS.LTS" }
-$ErrorActionPreference = 'Continue'
-docker info *> $null
+# ueber cmd, damit Docker-Warnungen PowerShell nicht stoppen
+cmd /c "docker info >nul 2>&1"
 $dockerOk = ($LASTEXITCODE -eq 0)
-$ErrorActionPreference = 'Stop'
 if (-not $dockerOk) { Fail 'Docker Desktop laeuft nicht. Bitte Docker Desktop starten, warten bis unten links "Engine running" steht, dann erneut.' }
 if (-not (Has 'pnpm')) {
   Step 'Installiere pnpm'
