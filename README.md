@@ -46,7 +46,7 @@ flowchart TD
 
 | Anbieter | Wofür | Kosten / Monat |
 |---|---|---|
-| **IONOS VPS** | Server (AlmaLinux 10). Empfohlen: **mind. 4 GB RAM** (z. B. VPS M), da Postgres + MongoDB + Node laufen | ca. **4 €** ¹ |
+| **IONOS VPS** | Server (AlmaLinux 10). Gewählt: **VPS M+ (4 GB RAM)**. Weniger RAM nicht empfohlen, da Postgres + MongoDB + Node laufen | ca. **4 €** ¹ |
 | **Beds24** | Channel-Manager: Echtzeit-Sync mit Booking.com und Airbnb | ca. **11 €** ² |
 | IONOS Domain + E-Mail | `hausanna-bodenmais.de`, `info@…`, Versand der Buchungsmails (SMTP) | bestehender Vertrag ³ |
 | Let's Encrypt | SSL-Zertifikat | 0 € |
