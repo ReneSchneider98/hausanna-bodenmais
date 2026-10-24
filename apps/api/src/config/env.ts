@@ -43,8 +43,8 @@ const envSchema = z
     MAIL_FROM: z.string().default('Haus Anna Bodenmais <info@hausanna-bodenmais.de>'),
     /** Wer bekommt Benachrichtigungen über neue Buchungen? */
     MAIL_OWNER_TO: z.string().default('info@hausanna-bodenmais.de'),
-    /** none | beds24 | ical */
-    CHANNEL_PROVIDER: z.enum(['none', 'beds24', 'ical']).default('none'),
+    /** none | beds24 */
+    CHANNEL_PROVIDER: z.enum(['none', 'beds24']).default('none'),
     BEDS24_REFRESH_TOKEN: z.string().optional(),
     BEDS24_API_URL: z.string().url().default('https://api.beds24.com/v2'),
     BEDS24_WEBHOOK_SECRET: z.string().optional(),

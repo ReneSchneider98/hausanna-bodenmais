@@ -67,7 +67,6 @@ const conn = {
   accommodationId: 'acc',
   accommodationName: 'FeWo 2',
   lastError: null,
-  icalImportUrls: ['https://admin.booking.com/hotel/ical.ics?t=1'],
 } as never;
 const ext = (o: Partial<ExternalBooking>): ExternalBooking => ({
   externalRef: '1',
@@ -84,12 +83,12 @@ const ext = (o: Partial<ExternalBooking>): ExternalBooking => ({
   ...o,
 });
 
-function setup(pullsOwnCancellations: boolean) {
+function setup() {
   const bookings = new FakeBookings();
   const events: string[] = [];
   const svc = new ChannelSyncService(
     { DISABLE_JOBS: true } as never,
-    { provider: pullsOwnCancellations ? 'beds24' : 'ical', pullsOwnCancellations } as never,
+    { provider: 'beds24' } as never,
     { record: async (_l: string, _c: string, m: string) => void events.push(m) } as never,
     {} as never,
     bookings as never,
@@ -101,14 +100,14 @@ function setup(pullsOwnCancellations: boolean) {
 
 describe('ChannelSyncService.reconcile', () => {
   it('übernimmt neue Portal-Buchungen und meldet sie', async () => {
-    const { svc, bookings, events } = setup(true);
-    await svc.reconcile(conn, [ext({})], '2026-10-24');
+    const { svc, bookings, events } = setup();
+    await svc.reconcile(conn, [ext({})]);
     expect(bookings.rows).toHaveLength(1);
     expect(events[0]).toContain('Neue Buchung über Booking.com');
   });
 
   it('meldet eine Doppelbuchung laut, statt sie still zu verwerfen', async () => {
-    const { svc, bookings, events } = setup(true);
+    const { svc, bookings, events } = setup();
     bookings.rows.push({
       id: 'w',
       accommodationId: 'acc',
@@ -119,12 +118,12 @@ describe('ChannelSyncService.reconcile', () => {
       externalRef: null,
       channelBookingId: null,
     });
-    await svc.reconcile(conn, [ext({ source: 'airbnb' })], '2026-10-24');
+    await svc.reconcile(conn, [ext({ source: 'airbnb' })]);
     expect(events[0]).toContain('DOPPELBUCHUNG');
   });
 
-  it('Kanalwechsel: per iCal importierte Buchung wird von Beds24 übernommen (kein Fehlalarm)', async () => {
-    const { svc, bookings, events } = setup(true);
+  it('Kanalwechsel: aus WordPress (iCal-UID) importierte Buchung wird von Beds24 übernommen (kein Fehlalarm)', async () => {
+    const { svc, bookings, events } = setup();
     bookings.rows.push({
       id: 'old',
       accommodationId: 'acc',
@@ -135,51 +134,14 @@ describe('ChannelSyncService.reconcile', () => {
       externalRef: 'abc@booking.com',
       channelBookingId: null,
     });
-    await svc.reconcile(conn, [ext({ externalRef: '555' })], '2026-10-24');
+    await svc.reconcile(conn, [ext({ externalRef: '555' })]);
     expect(bookings.rows).toHaveLength(1);
     expect(bookings.rows[0]!.externalRef).toBe('555');
     expect(events).toHaveLength(0);
   });
 
-  it('iCal: aus dem Feed verschwundene Buchung gilt als storniert', async () => {
-    const { svc, bookings } = setup(false);
-    const keep = ext({
-      externalRef: 'b@booking.com',
-      arrival: '2026-12-01',
-      departure: '2026-12-03',
-    });
-    await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' }), keep], '2026-10-24');
-    await svc.reconcile(conn, [keep], '2026-10-24');
-    expect(bookings.rows[0]!.status).toBe('cancelled');
-    expect(bookings.rows[1]!.status).toBe('confirmed');
-  });
-
-  it('iCal: leerer Feed storniert NICHTS, sondern warnt', async () => {
-    const { svc, bookings, events } = setup(false);
-    await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' })], '2026-10-24');
-    await svc.reconcile(conn, [], '2026-10-24');
-    expect(bookings.rows[0]!.status).toBe('confirmed');
-    expect(events.at(-1)).toContain('NICHT storniert');
-  });
-
-  it('iCal: Portal ohne eingetragenen Feed wird nie storniert', async () => {
-    const { svc, bookings } = setup(false);
-    bookings.rows.push({
-      id: 'x',
-      accommodationId: 'acc',
-      arrival: '2026-12-10',
-      departure: '2026-12-12',
-      status: 'confirmed',
-      source: 'airbnb',
-      externalRef: 'z@airbnb.com',
-      channelBookingId: null,
-    });
-    await svc.reconcile(conn, [ext({ externalRef: 'a@booking.com' })], '2026-10-24');
-    expect(bookings.rows.find((r) => r.id === 'x')!.status).toBe('confirmed');
-  });
-
   it('Doppelbuchungs-Alarm nur einmal je Kanalbuchung', async () => {
-    const { svc, bookings, events } = setup(true);
+    const { svc, bookings, events } = setup();
     bookings.rows.push({
       id: 'w',
       accommodationId: 'acc',
@@ -190,8 +152,8 @@ describe('ChannelSyncService.reconcile', () => {
       externalRef: null,
       channelBookingId: null,
     });
-    await svc.reconcile(conn, [ext({ source: 'airbnb' })], '2026-10-24');
-    await svc.reconcile(conn, [ext({ source: 'airbnb' })], '2026-10-24');
+    await svc.reconcile(conn, [ext({ source: 'airbnb' })]);
+    await svc.reconcile(conn, [ext({ source: 'airbnb' })]);
     expect(events.filter((e) => e.includes('DOPPELBUCHUNG'))).toHaveLength(1);
   });
 });

@@ -5,7 +5,6 @@ import { ChannelSyncService } from './application/channel-sync.service.js';
 import { CHANNEL_ADAPTER, type ChannelAdapter } from './domain/channel.port.js';
 import { Beds24ChannelAdapter } from './infrastructure/beds24.adapter.js';
 import { ChannelConnectionsRepository } from './infrastructure/channel-connections.repository.js';
-import { IcalChannelAdapter } from './infrastructure/ical.adapter.js';
 import {
   AdminChannelsController,
   PublicChannelsController,
@@ -16,8 +15,6 @@ export function createChannelAdapter(env: Env): ChannelAdapter | null {
   switch (env.CHANNEL_PROVIDER) {
     case 'beds24':
       return new Beds24ChannelAdapter(env.BEDS24_API_URL, env.BEDS24_REFRESH_TOKEN);
-    case 'ical':
-      return new IcalChannelAdapter();
     default:
       return null;
   }

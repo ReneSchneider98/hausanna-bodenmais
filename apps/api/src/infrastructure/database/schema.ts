@@ -128,7 +128,7 @@ export const bookings = pgTable(
     source: text('source', {
       enum: ['website', 'admin', 'blocked', 'booking_com', 'airbnb', 'channel_other', 'wordpress'],
     }).notNull(),
-    /** ID beim Kanal (Beds24-Buchungs-ID, iCal-UID, WordPress-ID) */
+    /** ID beim Kanal (Beds24-Buchungs-ID, WordPress-ID bzw. alte iCal-UID) */
     externalRef: text('external_ref'),
     guest: jsonb('guest').$type<Partial<Guest> | null>(),
     note: text('note').notNull().default(''),
@@ -159,13 +159,7 @@ export const channelConnections = pgTable('channel_connections', {
     .references(() => accommodations.id, { onDelete: 'cascade' }),
   enabled: boolean('enabled').notNull().default(false),
   beds24RoomId: text('beds24_room_id'),
-  icalImportUrls: jsonb('ical_import_urls').$type<string[]>().notNull().default([]),
-  /** Geheimer Teil unserer iCal-Export-URL */
-  icalExportToken: text('ical_export_token')
-    .notNull()
-    .default(sql`replace(gen_random_uuid()::text, '-', '')`),
   lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
   lastError: text('last_error'),
-  lastExportFetchAt: timestamp('last_export_fetch_at', { withTimezone: true }),
   ...timestamps,
 });

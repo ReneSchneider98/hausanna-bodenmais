@@ -11,7 +11,6 @@ import {
   TextField,
   Toggle,
   useAction,
-  useFeedback,
 } from '../components/ui.tsx';
 import { formatDateTime, relativeTime } from '../lib/dates.ts';
 import { useApi } from '../lib/useApi.ts';
@@ -19,60 +18,25 @@ import { useApi } from '../lib/useApi.ts';
 const PROVIDER = {
   none: { label: 'Keine Anbindung', tone: 'neutral' as const },
   beds24: { label: 'Beds24 (Echtzeit)', tone: 'success' as const },
-  ical: { label: 'iCal (kostenlos, verzögert)', tone: 'info' as const },
 };
-
-function CopyField({ label, value }: { label: string; value: string }) {
-  const { toast } = useFeedback();
-  return (
-    <div className="field">
-      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{label}</span>
-      <div className="copy-field">
-        <input
-          className="input"
-          readOnly
-          value={value}
-          aria-label={label}
-          onFocus={(e) => e.target.select()}
-        />
-        <Button
-          size="sm"
-          onClick={() =>
-            void navigator.clipboard
-              .writeText(value)
-              .then(() => toast('Kopiert'))
-              .catch(() => toast('Kopieren nicht möglich – bitte markieren und Strg+C', 'error'))
-          }
-        >
-          Kopieren
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 function ConnectionCard({
   conn,
-  provider,
   onSaved,
 }: {
   conn: ChannelConnection;
-  provider: ChannelOverview['provider'];
   onSaved: (o: ChannelOverview) => void;
 }) {
   const [enabled, setEnabled] = useState(conn.enabled);
   const [roomId, setRoomId] = useState(conn.beds24RoomId ?? '');
-  const [urls, setUrls] = useState<string[]>(conn.icalImportUrls);
   const { busy, run } = useAction();
 
   const save = async () => {
-    const clean = urls.map((u) => u.trim()).filter(Boolean);
     const o = await run(
       () =>
         Api.updateChannel(conn.accommodationId, {
           enabled,
           beds24RoomId: roomId.trim() || null,
-          icalImportUrls: clean,
         }),
       `${conn.accommodationName} gespeichert`,
     );
@@ -98,60 +62,14 @@ function ConnectionCard({
               ? `${relativeTime(conn.lastSyncAt)} (${formatDateTime(conn.lastSyncAt)})`
               : 'noch nie'}
           </dd>
-          <dt>Kalender abgeholt</dt>
-          <dd>
-            {conn.lastExportFetchAt
-              ? `${relativeTime(conn.lastExportFetchAt)} (${formatDateTime(conn.lastExportFetchAt)})`
-              : 'noch nie'}
-          </dd>
         </dl>
-        {provider !== 'ical' ? (
-          <TextField
-            label="Beds24 Room-ID"
-            value={roomId}
-            onChange={setRoomId}
-            placeholder="z. B. 123456"
-            hint="Zu finden in Beds24 unter Settings → Properties → Rooms."
-          />
-        ) : null}
-        {provider !== 'beds24' ? (
-          <div className="stack-sm">
-            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-              iCal-Import (Export-Links von Booking.com / Airbnb)
-            </span>
-            {urls.map((u, i) => (
-              <div className="copy-field" key={i}>
-                <input
-                  className="input"
-                  value={u}
-                  placeholder="https://admin.booking.com/…/ical.html?t=…"
-                  aria-label={`iCal-Link ${i + 1}`}
-                  onChange={(e) => setUrls(urls.map((x, j) => (j === i ? e.target.value : x)))}
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Link entfernen"
-                  onClick={() => setUrls(urls.filter((_, j) => j !== i))}
-                >
-                  ✕
-                </Button>
-              </div>
-            ))}
-            <Button size="sm" onClick={() => setUrls([...urls, ''])}>
-              + Link hinzufügen
-            </Button>
-          </div>
-        ) : null}
-        {provider !== 'beds24' ? (
-          <div className="stack-sm">
-            <CopyField
-              label="Unser Kalender für Booking.com"
-              value={conn.icalExportUrls.booking_com}
-            />
-            <CopyField label="Unser Kalender für Airbnb" value={conn.icalExportUrls.airbnb} />
-          </div>
-        ) : null}
+        <TextField
+          label="Beds24 Room-ID"
+          value={roomId}
+          onChange={setRoomId}
+          placeholder="z. B. 123456"
+          hint="Zu finden in Beds24 unter Settings → Properties → Rooms."
+        />
         <div className="form-actions">
           <Button variant="primary" busy={busy} onClick={() => void save()}>
             Speichern
@@ -223,18 +141,16 @@ export function ChannelsPage() {
         <div className="alert alert-info" style={{ marginTop: 16 }}>
           <span>
             <strong>Beds24</strong> meldet Buchungen in Sekunden an Booking.com und Airbnb (ca. 11
-            €/Monat). <strong>iCal</strong> ist kostenlos, Booking.com holt den Kalender aber nur
-            ca. alle 2 Stunden ab. Die Anbindung wird in der Server-Konfiguration gewählt (
-            <span className="mono">CHANNEL_PROVIDER</span>).
+            €/Monat). Die Anbindung wird in der Server-Konfiguration eingeschaltet (
+            <span className="mono">CHANNEL_PROVIDER=beds24</span>).
           </span>
         </div>
       </Card>
       <div className="grid-2">
         {data.connections.map((c) => (
           <ConnectionCard
-            key={`${c.accommodationId}-${c.enabled}-${c.beds24RoomId}-${c.icalImportUrls.join('|')}`}
+            key={`${c.accommodationId}-${c.enabled}-${c.beds24RoomId}`}
             conn={c}
-            provider={data.provider}
             onSaved={setData}
           />
         ))}

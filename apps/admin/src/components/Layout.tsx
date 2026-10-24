@@ -13,6 +13,23 @@ interface NavItem {
   end?: boolean;
 }
 
+/** Öffentliche Seite: auf dem Server dieselbe Domain, lokal läuft sie auf eigenem Port */
+const SITE_URL = import.meta.env.DEV ? 'http://localhost:5173/' : '/';
+
+function SiteIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const NAV: (NavItem | 'sep')[] = [
   { to: '/', label: 'Dashboard', icon: '⌂', end: true },
   { to: '/kalender', label: 'Kalender', icon: '▦' },
@@ -67,7 +84,7 @@ export function Layout() {
           ),
         )}
         <div style={{ marginTop: 'auto', padding: '16px 12px 0' }}>
-          <a href="/" target="_blank" rel="noreferrer" className="small">
+          <a href={SITE_URL} target="_blank" rel="noreferrer" className="small">
             Webseite ansehen ↗
           </a>
         </div>
@@ -84,6 +101,16 @@ export function Layout() {
           </Button>
           <span />
           <div className="user">
+            <a
+              href={SITE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="icon-btn site-link"
+              title="Webseite ansehen"
+              aria-label="Webseite ansehen (neuer Tab)"
+            >
+              <SiteIcon />
+            </a>
             <span className="user-name">
               <strong>{user?.name}</strong>{' '}
               <span className="muted small">· {user ? ROLE_LABELS[user.role] : ''}</span>

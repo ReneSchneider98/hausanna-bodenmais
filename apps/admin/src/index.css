@@ -233,6 +233,12 @@ a {
   align-items: center;
   gap: 12px;
 }
+.site-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
 .menu-btn {
   display: none;
 }

@@ -15,6 +15,13 @@
       "when": 1792854221219,
       "tag": "0001_no_double_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792860967668,
+      "tag": "0002_remove_ical",
+      "breakpoints": true
     }
   ]
 }

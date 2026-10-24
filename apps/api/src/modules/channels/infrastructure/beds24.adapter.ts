@@ -5,7 +5,8 @@ import type {
   ChannelConnectionData,
   ExternalBooking,
 } from '../domain/channel.port.js';
-import type { FetchFn } from './ical.adapter.js';
+
+export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
 /**
  * Beds24 API v2 (https://api.beds24.com/v2) – Channel-Manager für Booking.com + Airbnb.
@@ -115,7 +116,6 @@ export function toBeds24Booking(
 
 export class Beds24ChannelAdapter implements ChannelAdapter {
   readonly provider = 'beds24' as const;
-  readonly pullsOwnCancellations = true;
   private readonly logger = new Logger('Beds24');
   private token: { value: string; expiresAt: number } | null = null;
 

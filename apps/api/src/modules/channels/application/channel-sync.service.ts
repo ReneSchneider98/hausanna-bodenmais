@@ -21,7 +21,6 @@ import {
   type ChannelConnectionData,
   type ExternalBooking,
 } from '../domain/channel.port.js';
-import { detectSource } from '../domain/ical.js';
 import {
   ChannelConnectionsRepository,
   type ConnectionRow,
@@ -29,15 +28,12 @@ import {
 
 /** Eigene Buchungen (inkl. WordPress-Altbestand) werden an den Kanal gemeldet */
 const OWN_SOURCES = new Set(['website', 'admin', 'blocked', 'wordpress']);
-/** Mehr Stornos auf einmal = vermutlich Feed-Fehler → nur warnen, nichts stornieren */
-const MAX_AUTO_CANCELLATIONS = 2;
 
 function toConnData(c: ConnectionRow): ChannelConnectionData {
   return {
     accommodationId: c.accommodationId,
     accommodationName: c.accommodationName,
     beds24RoomId: c.beds24RoomId,
-    icalImportUrls: c.icalImportUrls,
   };
 }
 
@@ -56,7 +52,7 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
   private rerunRequested = false;
   /** Pushes je Buchung nie parallel (sonst Duplikate bei Beds24) */
   private readonly pushing = new Set<string>();
-  /** Alarme (Doppelbuchung, fehlende Feed-Einträge) nur einmal melden */
+  /** Doppelbuchungs-Alarme nur einmal melden */
   private readonly alerted = new Set<string>();
 
   constructor(
@@ -103,23 +99,14 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
       failedPushes: pending.filter((b) => b.channelSyncState === 'failed').length,
       connections: conns
         .filter((c) => c.accommodationStatus !== 'archived')
-        .map((c) => {
-          const base = `${this.env.PUBLIC_BASE_URL}/api/channels/ical/${c.icalExportToken}.ics`;
-          return {
-            accommodationId: c.accommodationId,
-            accommodationName: c.accommodationName,
-            enabled: c.enabled,
-            beds24RoomId: c.beds24RoomId,
-            icalImportUrls: c.icalImportUrls,
-            icalExportUrls: {
-              booking_com: `${base}?for=booking_com`,
-              airbnb: `${base}?for=airbnb`,
-            },
-            lastSyncAt: c.lastSyncAt?.toISOString() ?? null,
-            lastError: c.lastError,
-            lastExportFetchAt: c.lastExportFetchAt?.toISOString() ?? null,
-          };
-        }),
+        .map((c) => ({
+          accommodationId: c.accommodationId,
+          accommodationName: c.accommodationName,
+          enabled: c.enabled,
+          beds24RoomId: c.beds24RoomId,
+          lastSyncAt: c.lastSyncAt?.toISOString() ?? null,
+          lastError: c.lastError,
+        })),
     };
   }
 
@@ -173,7 +160,7 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
     for (const conn of (await this.connections.list()).filter((c) => c.enabled)) {
       try {
         const external = await this.adapter.pullBookings(toConnData(conn), today);
-        await this.reconcile(conn, external, today);
+        await this.reconcile(conn, external);
         await this.connections.update(conn.accommodationId, {
           lastSyncAt: new Date(),
           lastError: null,
@@ -195,16 +182,14 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
   }
 
   /** Kanal-Buchungen ins Backend übernehmen. Konflikte werden laut gemeldet, nie still verworfen. */
-  async reconcile(conn: ConnectionRow, external: ExternalBooking[], today: string): Promise<void> {
-    const seen = new Set<string>();
+  async reconcile(conn: ConnectionRow, external: ExternalBooking[]): Promise<void> {
     for (const ext of external) {
       // Eigene Buchung, die über Beds24 zurückkommt → nichts zu tun
       if (ext.ourReference || (await this.bookings.findByChannelBookingId(ext.externalRef)))
         continue;
-      seen.add(`${ext.source}:${ext.externalRef}`);
       let existing = await this.bookings.findByExternalRef(ext.source, ext.externalRef);
       if (!existing && ext.status === 'confirmed') {
-        // Kanalwechsel: dieselbe Buchung wurde früher per iCal/WordPress importiert (UID statt ID)
+        // Kanalwechsel: dieselbe Buchung kam früher über WordPress (iCal-UID statt Beds24-ID)
         const sameStay = await this.bookings.findActiveSameStay(
           conn.accommodationId,
           ext.arrival,
@@ -284,51 +269,6 @@ export class ChannelSyncService implements OnModuleInit, OnApplicationShutdown {
             { externalRef: ext.externalRef, source: ext.source },
           );
         } else throw e;
-      }
-    }
-
-    // iCal kennt keine Stornos: verschwundene zukünftige Buchungen = storniert.
-    // Sicherheitsregeln: nur Portale mit gelesenem Feed, nur Aufenthalte in der Zukunft,
-    // nie bei leerem Feed und nie viele auf einmal (dann Warnung statt Storno).
-    if (!this.adapter?.pullsOwnCancellations) {
-      const active = await this.bookings.list({
-        accommodationId: conn.accommodationId,
-        from: today,
-        status: ['confirmed', 'pending'],
-        source: ['booking_com', 'airbnb', 'channel_other'],
-      });
-      const fetchedSources = new Set(conn.icalImportUrls.map((u) => detectSource('', u)));
-      for (const source of fetchedSources) {
-        const missing = active.filter(
-          (b) =>
-            b.source === source &&
-            b.arrival > today &&
-            b.externalRef &&
-            !seen.has(`${b.source}:${b.externalRef}`),
-        );
-        if (!missing.length) continue;
-        const feedEmpty = !external.some((e) => e.source === source);
-        if (feedEmpty || missing.length > MAX_AUTO_CANCELLATIONS) {
-          const key = `bulk:${conn.accommodationId}:${source}:${missing.map((b) => b.id).join(',')}`;
-          if (!this.alerted.has(key)) {
-            this.alerted.add(key);
-            await this.events.record(
-              'warning',
-              'channel',
-              `${conn.accommodationName}: ${missing.length} ${label(source)}-Buchungen fehlen im Kalender-Feed. Zur Sicherheit NICHT storniert – bitte bei ${label(source)} prüfen und ggf. im Admin stornieren.`,
-            );
-          }
-          continue;
-        }
-        for (const b of missing) {
-          await this.bookings.update(b.id, { status: 'cancelled' });
-          await this.events.record(
-            'warning',
-            'booking',
-            `${label(b.source)}-Buchung nicht mehr im Kalender → storniert: ${conn.accommodationName}, ${b.arrival} – ${b.departure}`,
-            { bookingId: b.id },
-          );
-        }
       }
     }
   }

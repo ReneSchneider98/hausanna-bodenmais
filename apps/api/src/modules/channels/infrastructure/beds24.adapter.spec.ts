@@ -5,7 +5,6 @@ const conn = {
   accommodationId: 'a',
   accommodationName: 'FeWo 2',
   beds24RoomId: '12345',
-  icalImportUrls: [],
 };
 const booking: Booking = {
   id: 'b',

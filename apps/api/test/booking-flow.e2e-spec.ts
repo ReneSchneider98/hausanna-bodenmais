@@ -251,17 +251,6 @@ describe.skipIf(!TEST_DB)('Buchungsablauf mit echter Datenbank (e2e)', () => {
     expect(dash.body.stats.bookingsNext30Days).toBe(3);
   });
 
-  it('iCal-Export für Booking.com enthält die Belegungen', async () => {
-    const ch = await request(app.getHttpServer())
-      .get('/api/admin/channels')
-      .set('Cookie', cookie)
-      .expect(200);
-    const url = new URL(ch.body.connections[0].icalExportUrls.booking_com);
-    const ics = await request(app.getHttpServer()).get(`${url.pathname}${url.search}`).expect(200);
-    expect(ics.text).toContain('DTSTART;VALUE=DATE:20261102');
-    expect(ics.text.match(/BEGIN:VEVENT/g)).toHaveLength(3);
-  });
-
   it('Benutzerverwaltung: letzter Admin kann nicht entfernt werden', async () => {
     const users = await request(app.getHttpServer())
       .get('/api/admin/users')

@@ -42,23 +42,9 @@ export class ChannelConnectionsRepository {
     return (await this.list()).find((c) => c.accommodationId === accommodationId);
   }
 
-  async findByExportToken(token: string): Promise<ConnectionRow | undefined> {
-    return (await this.list()).find((c) => c.icalExportToken === token);
-  }
-
   async update(
     accommodationId: string,
-    data: Partial<
-      Pick<
-        ConnectionRow,
-        | 'enabled'
-        | 'beds24RoomId'
-        | 'icalImportUrls'
-        | 'lastSyncAt'
-        | 'lastError'
-        | 'lastExportFetchAt'
-      >
-    >,
+    data: Partial<Pick<ConnectionRow, 'enabled' | 'beds24RoomId' | 'lastSyncAt' | 'lastError'>>,
   ): Promise<void> {
     await this.ensureAll();
     await this.db

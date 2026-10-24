@@ -1,6 +1,6 @@
 import type { Booking, Guest } from '@hausanna/shared';
 
-/** Buchung, wie sie von einem Kanal (Beds24, iCal-Feed) gemeldet wird. */
+/** Buchung, wie sie von einem Kanal (Beds24) gemeldet wird. */
 export interface ExternalBooking {
   externalRef: string;
   arrival: string;
@@ -20,20 +20,16 @@ export interface ChannelConnectionData {
   accommodationId: string;
   accommodationName: string;
   beds24RoomId: string | null;
-  icalImportUrls: string[];
 }
 
 /**
  * Port für Buchungsportale. Neue Anbindung = neuer Adapter, sonst keine Änderung.
  * - pushBooking: unsere Buchung/Sperre an den Kanal melden (sperrt dort den Zeitraum)
  * - cancelBooking: Stornierung melden
- * - pullBookings: Buchungen des Kanals abholen (Abgleich)
- * - pullsOwnCancellations: liefert der Kanal Stornos explizit (true) oder verschwinden
- *   Buchungen einfach aus dem Feed (iCal, false)?
+ * - pullBookings: Buchungen des Kanals abholen (Abgleich, inkl. Stornos)
  */
 export interface ChannelAdapter {
-  readonly provider: 'beds24' | 'ical';
-  readonly pullsOwnCancellations: boolean;
+  readonly provider: 'beds24';
   isConfigured(): boolean;
   canPush(conn: ChannelConnectionData): boolean;
   pushBooking(

@@ -41,7 +41,7 @@ https://hausanna-bodenmais.de/api/channels/beds24/webhook?secret=<BEDS24_WEBHOOK
 
 Das Geheimnis steht in `/etc/hausanna/api.env` (wird von `install.sh` erzeugt).
 
-## Wechsel von iCal / WordPress
+## Wechsel von WordPress
 
 Booking.com-Buchungen, die aus WordPress (iCal) importiert wurden, werden beim ersten Beds24-Abgleich
 automatisch übernommen (gleiche Unterkunft + gleiche Daten), nicht als Doppelbuchung gemeldet.
