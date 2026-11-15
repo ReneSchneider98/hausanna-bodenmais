@@ -82,6 +82,29 @@ setup_tls() {
 systemctl reload nginx
 EOF
   chmod 755 /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+
+  # Erneuerung zweimal täglich (certbot erneuert nur, wenn < 30 Tage Restlaufzeit)
+  cat > /etc/systemd/system/certbot-renew.service <<'EOF'
+[Unit]
+Description=Let's-Encrypt-Zertifikate erneuern
+
+[Service]
+Type=oneshot
+ExecStart=/opt/certbot/bin/certbot renew --quiet
+EOF
+  cat > /etc/systemd/system/certbot-renew.timer <<'EOF'
+[Unit]
+Description=Let's-Encrypt-Zertifikate zweimal täglich prüfen
+
+[Timer]
+OnCalendar=*-*-* 03,15:17:00
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl daemon-reload
   systemctl enable --now certbot-renew.timer
   info "HTTPS aktiv: https://${DOMAIN}"
 }
@@ -95,10 +118,18 @@ fi
 log "1/12 System aktualisieren und Pakete installieren"
 # =============================================================================
 dnf -y upgrade --refresh
-dnf -y install epel-release
 dnf -y install git curl tar openssl nginx podman firewalld \
   policycoreutils-python-utils postgresql-server postgresql-contrib \
-  certbot nodejs npm
+  python3 nodejs npm
+
+# certbot aus PyPI in eigener venv (offizielle Empfehlung) statt EPEL: EPEL 10 folgt
+# RHEL schneller als AlmaLinux und hatte z. B. für 10.2 unauflösbare Abhängigkeiten.
+if [[ ! -x /opt/certbot/bin/certbot ]]; then
+  python3 -m venv /opt/certbot
+  /opt/certbot/bin/pip install --quiet --upgrade pip
+  /opt/certbot/bin/pip install --quiet certbot
+fi
+ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
 
 # -----------------------------------------------------------------------------
 log "2/12 Node.js prüfen (mind. ${NODE_MIN_MAJOR}.${NODE_MIN_MINOR})"
