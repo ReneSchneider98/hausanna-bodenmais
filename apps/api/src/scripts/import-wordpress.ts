@@ -6,6 +6,7 @@
  * Optionen:
  *   --preview <ordner>   nur JSON-Vorschau schreiben, nichts in Datenbanken ändern
  *   --skip-bookings      keine Buchungen importieren
+ *   --skip-source <q>    Buchungen dieser Quelle auslassen (z. B. booking_com), mehrfach möglich
  *   --overwrite-pages    vorhandene Seiten überschreiben (Standard: nur fehlende anlegen)
  *   --skip-content       Bilder/Seiten/Design (MongoDB) auslassen, nur Postgres-Daten
  *   --update-existing    schon importierte Datensätze mit WordPress-Stand überschreiben
@@ -63,6 +64,7 @@ async function main() {
       uploads: { type: 'string' },
       preview: { type: 'string' },
       'skip-bookings': { type: 'boolean', default: false },
+      'skip-source': { type: 'string', multiple: true, default: [] },
       'overwrite-pages': { type: 'boolean', default: false },
       'update-existing': { type: 'boolean', default: false },
       'skip-content': { type: 'boolean', default: false },
@@ -109,6 +111,7 @@ async function importAll(
   known: Set<string>,
   opts: {
     'skip-bookings'?: boolean;
+    'skip-source'?: string[];
     'overwrite-pages'?: boolean;
     'skip-content'?: boolean;
     'update-existing'?: boolean;
@@ -187,9 +190,27 @@ async function importAll(
   if (!opts['skip-bookings']) {
     let created = 0;
     let updated = 0;
+    let skipped = 0;
+    const skipSources = new Set(opts['skip-source'] ?? []);
+    // Gleiche Kennung zweimal im Export (z. B. ein Booking.com-Kalender bei zwei Wohnungen
+    // hinterlegt) → nur die erste wird übernommen; die zweite laut melden, nie still verwerfen
+    const seenRefs = new Map<string, string>();
     for (const b of plan.bookings) {
+      if (skipSources.has(b.source)) {
+        skipped++;
+        continue;
+      }
       const accommodationId = accIds.get(b.accommodationLegacyId);
       if (!accommodationId) continue;
+      const refKey = `${b.source}|${b.externalRef}`;
+      const first = seenRefs.get(refKey);
+      if (first) {
+        plan.warnings.push(
+          `Buchung ${b.legacyId} (${b.arrival} – ${b.departure}) hat dieselbe Kennung wie Buchung ${first} bei einer anderen Unterkunft – nicht importiert, bitte prüfen`,
+        );
+        continue;
+      }
+      seenRefs.set(refKey, b.legacyId);
       const data = {
         accommodationId,
         arrival: b.arrival,
@@ -222,7 +243,9 @@ async function importAll(
         } else throw e;
       }
     }
-    log(`Buchungen: ${created} neu, ${updated} aktualisiert`);
+    log(
+      `Buchungen: ${created} neu, ${updated} aktualisiert${skipped ? `, ${skipped} ausgelassen (${[...skipSources].join(', ')})` : ''}`,
+    );
   }
 
   if (opts['skip-content']) return;
