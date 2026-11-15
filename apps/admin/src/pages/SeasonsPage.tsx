@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { type Season, type SeasonInput, seasonInputSchema } from '@hausanna/shared';
+import { type SeasonInput, seasonInputSchema } from '@hausanna/shared';
 import { Api } from '../api/endpoints.ts';
 import {
   Button,
+  DangerZone,
   Dialog,
   EmptyState,
   ErrorBox,
@@ -10,7 +11,6 @@ import {
   PageHeader,
   TextField,
   useAction,
-  useFeedback,
 } from '../components/ui.tsx';
 import { formatDate } from '../lib/dates.ts';
 import { useApi } from '../lib/useApi.ts';
@@ -20,7 +20,6 @@ export function SeasonsPage() {
   const [edit, setEdit] = useState<(SeasonInput & { id?: string }) | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const { busy, run } = useAction();
-  const { confirm } = useFeedback();
 
   const save = async () => {
     if (!edit) return;
@@ -39,18 +38,15 @@ export function SeasonsPage() {
     }
   };
 
-  const remove = async (s: Season) => {
-    if (
-      !(await confirm({
-        title: 'Saison löschen?',
-        text: `„${s.name}“ und alle zugehörigen Saisonpreise werden gelöscht.`,
-        confirmLabel: 'Löschen',
-        danger: true,
-      }))
-    )
-      return;
-    await run(() => Api.deleteSeason(s.id), 'Saison gelöscht');
-    await reload();
+  const remove = async (id: string) => {
+    const ok = await run(async () => {
+      await Api.deleteSeason(id);
+      return true;
+    }, 'Saison gelöscht');
+    if (ok) {
+      setEdit(null);
+      await reload();
+    }
   };
 
   return (
@@ -97,21 +93,16 @@ export function SeasonsPage() {
                   </td>
                   <td>{formatDate(s.startDate)}</td>
                   <td>{formatDate(s.endDate)}</td>
-                  <td>
-                    <div className="row" style={{ justifyContent: 'flex-end' }}>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setFormError(null);
-                          setEdit({ ...s });
-                        }}
-                      >
-                        Bearbeiten
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => void remove(s)}>
-                        Löschen
-                      </Button>
-                    </div>
+                  <td className="actions">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setFormError(null);
+                        setEdit({ ...s });
+                      }}
+                    >
+                      Bearbeiten
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -155,6 +146,15 @@ export function SeasonsPage() {
                 onChange={(v) => setEdit({ ...edit, endDate: v })}
               />
             </div>
+            {edit.id ? (
+              <DangerZone
+                title="Saison löschen"
+                text={`„${edit.name}“ und alle zugehörigen Saisonpreise werden endgültig gelöscht.`}
+                label="Saison löschen"
+                busy={busy}
+                onConfirm={() => remove(edit.id!)}
+              />
+            ) : null}
           </>
         ) : null}
       </Dialog>

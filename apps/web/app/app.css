@@ -1511,3 +1511,63 @@ main:focus {
   background: var(--c-accent);
   color: #fff;
 }
+
+/* Pfeil "nach oben" – nur am Handy (siehe ScrollTopButton.tsx) */
+.scroll-top {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .scroll-top {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 150;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--c-accent-dark);
+    color: #fff;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition:
+      opacity 0.2s,
+      transform 0.2s,
+      visibility 0.2s;
+  }
+
+  .scroll-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
+/* Handy: Inhalte mittig. Formulare, Aufklapp-Fragen, Listen und Kalender bleiben
+   linksbündig bzw. behalten ihr eigenes Raster, damit sie gut lesbar und bedienbar sind. */
+@media (max-width: 767px) {
+  main,
+  .site-footer {
+    text-align: center;
+  }
+
+  main :is(.faq, .booking, .box--form, form, ul, ol, table) {
+    text-align: left;
+  }
+
+  main .rounded-image,
+  main .tip__img {
+    margin-inline: auto;
+  }
+
+  .site-footer__cols > * {
+    justify-self: center;
+  }
+}

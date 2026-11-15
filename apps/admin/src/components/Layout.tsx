@@ -4,6 +4,7 @@ import { ROLE_LABELS } from '@hausanna/shared';
 import { Api } from '../api/endpoints.ts';
 import { useAuth } from '../auth/AuthContext.tsx';
 import { useApi } from '../lib/useApi.ts';
+import { ScrollTopButton } from './ScrollTopButton.tsx';
 import { Button } from './ui.tsx';
 
 interface NavItem {
@@ -156,6 +157,7 @@ export function Layout() {
           </div>
         </header>
         <main ref={mainRef} className={`content ${wide ? 'content-wide' : ''}`}>
+          <ScrollTopButton />
           <Outlet />
         </main>
       </div>

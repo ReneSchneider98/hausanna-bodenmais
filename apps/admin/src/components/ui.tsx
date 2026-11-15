@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type InputHTMLAttributes,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
@@ -33,6 +34,98 @@ export function Button({
       {busy ? <span className="spinner" aria-hidden /> : null}
       {children}
     </button>
+  );
+}
+
+/* ---------- Löschen: gedrückt halten statt einfach klicken ---------- */
+const HOLD_MS = 2000;
+
+/**
+ * Löst erst aus, wenn der Knopf 2 Sekunden gehalten wird (Maus, Finger oder Leertaste/Enter).
+ * Ein Balken zeigt den Fortschritt; früheres Loslassen bricht ab.
+ */
+export function HoldButton({
+  label,
+  onConfirm,
+  busy,
+}: {
+  label: string;
+  onConfirm: () => void | Promise<void>;
+  busy?: boolean;
+}) {
+  const [holding, setHolding] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const start = () => {
+    if (busy || timer.current) return;
+    setHolding(true);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      setHolding(false);
+      void onConfirm();
+    }, HOLD_MS);
+  };
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    setHolding(false);
+  };
+  useEffect(() => stop, []);
+
+  return (
+    <button
+      type="button"
+      className={`btn btn-danger hold-btn ${holding ? 'holding' : ''}`}
+      style={{ '--hold-ms': `${HOLD_MS}ms` } as CSSProperties}
+      disabled={busy}
+      aria-label={`${label} – zum Bestätigen 2 Sekunden gedrückt halten`}
+      onPointerDown={(e) => {
+        if (e.button === 0) start();
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onContextMenu={(e) => e.preventDefault()}
+      onKeyDown={(e) => {
+        if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+          e.preventDefault();
+          start();
+        }
+      }}
+      onKeyUp={(e) => {
+        if (e.key === ' ' || e.key === 'Enter') stop();
+      }}
+      onBlur={stop}
+    >
+      {busy ? <span className="spinner" aria-hidden /> : null}
+      <span className="hold-btn-label">{holding ? 'Weiter halten …' : label}</span>
+    </button>
+  );
+}
+
+/** Roter Bereich ganz unten in Bearbeiten-Ansichten: Löschen nur hier und nur per Halten. */
+export function DangerZone({
+  title,
+  text,
+  label,
+  onConfirm,
+  busy,
+}: {
+  title: string;
+  text: ReactNode;
+  label: string;
+  onConfirm: () => void | Promise<void>;
+  busy?: boolean;
+}) {
+  return (
+    <section className="danger-zone" aria-label="Gefahrenzone">
+      <div>
+        <strong>{title}</strong>
+        <p className="muted small">{text}</p>
+      </div>
+      <HoldButton label={label} onConfirm={onConfirm} busy={busy} />
+      <p className="muted small">Zum Löschen den Knopf 2 Sekunden gedrückt halten.</p>
+    </section>
   );
 }
 

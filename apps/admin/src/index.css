@@ -301,6 +301,21 @@ a {
   gap: 8px;
   flex-wrap: wrap;
 }
+/* Handy: Seitenkopf mittig (Überschrift, Einleitung, Knöpfe) */
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .page-header > div:first-child {
+    flex: none;
+    width: 100%;
+  }
+  .page-actions {
+    justify-content: center;
+  }
+}
 @media (max-width: 860px) {
   .shell {
     grid-template-columns: 1fr;
@@ -378,6 +393,56 @@ a {
 .btn-danger {
   color: var(--danger);
   border-color: color-mix(in srgb, var(--danger) 40%, white);
+}
+/* Gedrückt halten zum Löschen (HoldButton): roter Balken füllt sich in --hold-ms */
+.hold-btn {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.hold-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--danger);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.15s ease-out;
+}
+.hold-btn.holding::before {
+  transform: scaleX(1);
+  transition: transform var(--hold-ms) linear;
+}
+.hold-btn > * {
+  position: relative;
+}
+.hold-btn.holding {
+  color: #fff;
+  transition: color 0.3s calc(var(--hold-ms) / 2);
+}
+.danger-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, white);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger-soft) 50%, var(--surface));
+}
+.danger-zone strong {
+  color: var(--danger);
+}
+.danger-zone p {
+  margin: 4px 0 0;
+}
+@media (max-width: 640px) {
+  .danger-zone .hold-btn {
+    width: 100%;
+  }
 }
 .btn-danger:hover:not(:disabled) {
   background: var(--danger-soft);
@@ -632,6 +697,11 @@ table.table {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* Aktions-Spalte (ohne Überschrift) überall rechtsbündig */
+.table td[data-label=''] {
+  text-align: right;
+  white-space: nowrap;
+}
 /*
  * Ist für die Tabelle zu wenig Platz (Handy, iPad, schmales Fenster), wird jede Zeile
  * eine Karte, Spaltenname (data-label, siehe Layout.tsx) links daneben. Nie seitlich scrollen.
@@ -649,38 +719,48 @@ table.table {
     width: 100%;
   }
   .table tr {
-    padding: 10px 14px;
+    padding: 14px;
     border-bottom: 1px solid var(--border);
   }
   .table tr:last-child {
     border-bottom: 0;
   }
+  /* Mittig: Spaltenname klein oben, Wert darunter */
   .table td,
   .table td.num {
-    position: relative;
-    padding: 5px 0 5px 38%;
+    padding: 4px 0;
     border: 0;
-    text-align: left;
+    text-align: center;
     white-space: normal;
     overflow-wrap: anywhere;
   }
   .table td::before {
     content: attr(data-label);
-    position: absolute;
-    left: 0;
-    top: 6px;
-    width: 35%;
-    font-size: 0.8rem;
+    display: block;
+    font-size: 0.75rem;
     color: var(--muted);
+  }
+  /* Inhalte, die als Zeile/Spalte gebaut sind (Bild + Name, Status-Badges), ebenfalls mittig */
+  .table td > .row,
+  .table td > div[style*='flex'],
+  .table td .stack-sm {
+    justify-content: center;
+    align-items: center !important;
   }
   /* Zellen ohne Überschrift (z. B. Aktions-Knöpfe) über die volle Breite */
   .table td[data-label='']::before,
   .table td:not([data-label])::before {
     display: none;
   }
-  .table td[data-label=''],
-  .table td:not([data-label]) {
-    padding-left: 0;
+  /* Aktions-Spalte (z. B. "Bearbeiten"): Knopf in voller Breite unten auf der Karte */
+  .table td[data-label=''] {
+    padding-top: 10px;
+  }
+  .table td[data-label=''] .btn {
+    width: 100%;
+    min-height: 44px;
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, white);
   }
 }
 .empty {
@@ -1526,5 +1606,45 @@ button.media-tile {
 @media (min-width: 861px) {
   .shell {
     background: linear-gradient(to right, var(--surface) var(--sidebar), var(--bg) var(--sidebar));
+  }
+}
+
+/* Pfeil "nach oben" – nur bei zugeklapptem Menü (Handy/iPad hochkant), siehe ScrollTopButton.tsx */
+.scroll-top {
+  display: none;
+}
+@media (max-width: 860px) {
+  .scroll-top {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 25%);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition:
+      opacity 0.2s,
+      transform 0.2s,
+      visibility 0.2s;
+  }
+  .scroll-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  /* Über der Speichern-Leiste, damit "Speichern" nicht verdeckt wird */
+  .shell:has(.sticky-actions) .scroll-top {
+    bottom: 96px;
   }
 }

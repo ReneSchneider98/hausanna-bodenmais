@@ -3,6 +3,7 @@ import type { MediaItem } from '@hausanna/shared';
 import { Api } from '../api/endpoints.ts';
 import {
   Button,
+  DangerZone,
   Dialog,
   EmptyState,
   ErrorBox,
@@ -25,7 +26,7 @@ export function MediaPage() {
   const [edit, setEdit] = useState<MediaItem | null>(null);
   const [alt, setAlt] = useState('');
   const { busy, run } = useAction();
-  const { confirm, toast } = useFeedback();
+  const { toast } = useFeedback();
 
   const items = useMemo(
     () =>
@@ -50,15 +51,6 @@ export function MediaPage() {
   };
 
   const remove = async (m: MediaItem) => {
-    if (
-      !(await confirm({
-        title: 'Bild löschen?',
-        text: `„${m.filename}“ wird endgültig gelöscht. Wird es noch auf einer Seite verwendet, fehlt es dort.`,
-        confirmLabel: 'Löschen',
-        danger: true,
-      }))
-    )
-      return;
     await run(() => Api.deleteMedia(m.id), 'Bild gelöscht');
     setEdit(null);
     await reload();
@@ -133,13 +125,6 @@ export function MediaPage() {
         footer={
           edit ? (
             <>
-              <Button
-                variant="danger"
-                onClick={() => void remove(edit)}
-                style={{ marginRight: 'auto' }}
-              >
-                Löschen
-              </Button>
               <Button onClick={() => setEdit(null)}>Schließen</Button>
               <Button
                 variant="primary"
@@ -189,6 +174,13 @@ export function MediaPage() {
             <p className="muted small">
               {edit.filename} · {kb(edit.size)} · {formatDateTime(edit.uploadedAt)}
             </p>
+            <DangerZone
+              title="Bild löschen"
+              text={`„${edit.filename}“ wird endgültig gelöscht. Wird es noch auf einer Seite verwendet, fehlt es dort.`}
+              label="Bild löschen"
+              busy={busy}
+              onConfirm={() => remove(edit)}
+            />
           </>
         ) : null}
       </Dialog>

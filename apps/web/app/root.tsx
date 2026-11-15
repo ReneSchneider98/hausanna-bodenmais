@@ -29,6 +29,7 @@ import type { Route } from './+types/root';
 import { AdminBar } from './components/AdminBar';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
+import { ScrollTopButton } from './components/ScrollTopButton';
 import { fetchSite, publicBaseUrl } from './lib/api.server';
 import type { PublicSite } from './lib/types';
 import './app.css';
@@ -87,6 +88,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
       </main>
       <Footer site={site} year={year} />
       <AdminBar />
+      <ScrollTopButton />
     </>
   );
 }

@@ -7,6 +7,7 @@ import { RichText } from '../components/RichText.tsx';
 import {
   Button,
   Card,
+  DangerZone,
   Dialog,
   ErrorBox,
   Loading,
@@ -310,15 +311,6 @@ export function PageEditPage() {
   };
 
   const remove = async () => {
-    if (
-      !(await confirm({
-        title: 'Seite löschen?',
-        text: `„${page.title}“ ist danach auf der Webseite nicht mehr erreichbar.`,
-        confirmLabel: 'Löschen',
-        danger: true,
-      }))
-    )
-      return;
     const ok = await run(async () => {
       await Api.deletePage(page.slug);
       return true;
@@ -346,11 +338,6 @@ export function PageEditPage() {
             <a className="btn" href={publicUrl(page.slug)} target="_blank" rel="noreferrer">
               Seite ansehen
             </a>
-            {page.slug !== 'home' ? (
-              <Button variant="danger" onClick={() => void remove()}>
-                Löschen
-              </Button>
-            ) : null}
           </>
         }
       />
@@ -452,6 +439,16 @@ export function PageEditPage() {
           </div>
         </section>
       ))}
+
+      {page.slug !== 'home' ? (
+        <DangerZone
+          title="Seite löschen"
+          text={`„${page.title}“ ist danach auf der Webseite nicht mehr erreichbar.`}
+          label="Seite löschen"
+          busy={busy}
+          onConfirm={remove}
+        />
+      ) : null}
 
       <div className="sticky-actions form-actions">
         <Button variant="primary" busy={busy} onClick={() => void save()}>
